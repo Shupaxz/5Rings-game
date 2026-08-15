@@ -1141,7 +1141,7 @@ textarea.inp{resize:vertical;min-height:64px}
     <div class="ed-head">
       <h2>🎬 สร้างคำถามรายการ</h2>
       <button class="btn ghost sm" id="edGen">⚙️ Gen 24 ข้อ (ยาก)</button>
-      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 8 ข้อ</button>
+      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 20 ข้อ (ครบทุกโหมด)</button>
       <button class="btn ghost sm" id="edSave">💾 บันทึกชุดโจทย์</button>
       <button class="btn ghost sm" id="edLoad">📂 โหลดชุดโจทย์</button>
       <input type="file" id="edFile" accept=".json,application/json" hidden>
@@ -4717,25 +4717,53 @@ const Ed={
     Ed.render();toast("🎲 สุ่มโจทย์ข้อนี้ใหม่แล้ว");
   },
   async genAnim(n){
-    n=Math.max(1,n||6);
+    n=Math.max(1,n||20);
     if(!QGA.canRecord()){
       toast("เบราว์เซอร์นี้อัดคลิปไม่ได้ — ใช้ Chrome/Edge เวอร์ชันใหม่นะ","#ff8fa3");return;
     }
-    const btn=$("#edGenAnim");
-    if(btn){btn.disabled=true;}
-    let last=null, ok=0;
+    if(Ed._animBusy){toast("กำลังสร้างอยู่แล้ว รอสักครู่นะ");return;}
+    Ed._animBusy=true; Ed._animStop=false;
+    const box=$("#animProg"), fill=$("#apFill"), cnt=$("#apCount"),
+          eta=$("#apEta"), md=$("#apMode"), cancel=$("#apCancel");
+    if(box){box.classList.add("on");}
+    if(cancel)cancel.onclick=()=>{ Ed._animStop=true; if(md)md.textContent="กำลังหยุด… รอข้อที่ค้างอยู่ให้จบก่อน"; };
+    const NAMES={beat:"จังหวะกะพริบ",wave:"คลื่นลูกโซ่",gears:"เฟืองขบกัน",blinkcount:"นับจำนวนกะพริบ",
+      counter:"ตัวนับข้ามเลข",pendulum:"ลูกตุ้มคาบผิด",traffic:"ไฟจราจร",spinlag:"เข็มหลุดแนว",
+      fillbar:"แถบพลังงาน",seqlight:"ไฟวิ่งผิดคิว",colorcycle:"วงล้อสี",beaker:"บีกเกอร์น้ำ",
+      racer:"รถวิ่งทำนายระยะ",ballbox:"ยิงลูกบอลลงกล่อง",shell:"เกมสามถ้วย",crossing:"เส้นทางไขว้",
+      halfbounce:"กระเด้งครึ่งระยะ",spinstop:"เข็มหมุนทำนายช่อง",dominorun:"โดมิโนล้ม",twotank:"สองถังไล่กัน"};
+    const btns=["#edGen","#edGenAnim","#edSave","#edLoad","#edDone"].map(q=>$(q)).filter(Boolean);
+    btns.forEach(b=>b.disabled=true);
+    const t0=performance.now();
+    let last=null, ok=0, fail=0;
     for(let i=0;i<n;i++){
-      toast("🎬 กำลังสร้างโจทย์ภาพเคลื่อนไหว "+(i+1)+"/"+n+" … (4–8 วิ/ข้อ)","#41c7ff");
+      if(Ed._animStop)break;
+      if(cnt)cnt.textContent=(i+1)+" / "+n;
+      if(fill)fill.style.width=Math.round(i/n*100)+"%";
+      if(md)md.textContent="กำลังอัดคลิปข้อที่ "+(i+1)+" …";
+      if(eta){
+        if(i>0){
+          const per=(performance.now()-t0)/i, left=Math.round(per*(n-i)/1000);
+          eta.textContent="เหลืออีกราว "+(left>=60?Math.ceil(left/60)+" นาที":left+" วินาที");
+        }else eta.textContent="ราว 2 นาที";
+      }
+      await new Promise(r=>setTimeout(r,30));      // ปล่อยให้ UI วาดก่อน
       try{
         const q=await QGA.make(last);
         last=q.mode.replace("anim:","");
+        if(md)md.textContent="✓ "+(NAMES[last]||last)+(q.reveal?" (มีคลิปเฉลย)":"");
         q.text="ข้อ "+(App.editor.questions.length+1)+" · "+q.text;
         App.editor.questions.push(q);ok++;
         Ed.render();
-      }catch(e){ console.warn("anim gen",e); }
+      }catch(e){ fail++; console.warn("anim gen",e); }
     }
-    if(btn)btn.disabled=false;
-    toast(ok?("🎬 สร้างโจทย์ภาพเคลื่อนไหวสำเร็จ "+ok+" ข้อ · รวมคลัง "+App.editor.questions.length+" ข้อ")
+    if(fill)fill.style.width="100%";
+    if(cnt)cnt.textContent=ok+" / "+n;
+    btns.forEach(b=>b.disabled=false);
+    setTimeout(()=>{ if(box)box.classList.remove("on"); },420);
+    Ed._animBusy=false;
+    toast(ok?("🎬 สร้างโจทย์ภาพเคลื่อนไหวสำเร็จ "+ok+" ข้อ"+(fail?(" (พลาด "+fail+")"):"")+
+              " · รวมคลัง "+App.editor.questions.length+" ข้อ")
             :"สร้างคลิปไม่สำเร็จ ลองใหม่อีกครั้ง", ok?"#35e07a":"#ff8fa3");
     Ed.render();
   },
@@ -9440,7 +9468,7 @@ $$(".menu-col .btn").forEach(b=>{
 $("#btnCreate").onclick=()=>{$("#menu").classList.add("hidden");$("#editor").classList.remove("hidden");
   if(!App.editor.questions.length)Ed.render();};
 $("#edGen").onclick=()=>Ed.gen(24);
-$("#edGenAnim").onclick=()=>Ed.genAnim(8);
+$("#edGenAnim").onclick=()=>Ed.genAnim(20);
 $("#edSave").onclick=()=>{
   if(!App.editor.questions.length&&!App.editor.final){toast("ยังไม่มีโจทย์ให้บันทึก");return;}
   Ed.save();};
@@ -10069,6 +10097,28 @@ const Profile={
 #specTag{position:fixed;left:18px;bottom:78px;z-index:70;font-family:PKNB,Kanit,sans-serif;
   font-weight:800;font-size:12.5px;letter-spacing:.18em;padding:7px 14px;border-radius:99px;
   color:#8fb6ff;background:rgba(6,10,26,.85);border:1px solid rgba(65,199,255,.4)}
+#animProg{position:fixed;inset:0;z-index:205;display:none;align-items:center;justify-content:center;
+  background:rgba(3,5,14,.78);backdrop-filter:blur(6px);font-family:PKNB,Kanit,sans-serif}
+#animProg.on{display:flex;animation:apIn .3s ease-out both}
+@keyframes apIn{from{opacity:0}to{opacity:1}}
+#animProg .ap-box{width:min(460px,92vw);padding:28px 30px 24px;border-radius:24px;text-align:center;
+  background:linear-gradient(180deg,rgba(18,28,66,.97),rgba(6,10,26,.98));
+  border:1px solid rgba(255,210,63,.45);
+  box-shadow:0 26px 60px rgba(0,0,0,.7),0 0 60px rgba(255,210,63,.16);
+  animation:socPop .45s cubic-bezier(.2,1.4,.35,1) both}
+#animProg .ap-ttl{font-size:20px;font-weight:900;color:#ffd23f;margin-bottom:6px}
+#animProg .ap-sub{font-size:13.5px;color:#9db4dd;min-height:20px;margin-bottom:16px}
+#animProg .ap-bar{height:12px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;
+  border:1px solid rgba(255,210,63,.25)}
+#animProg .ap-bar span{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#ffd23f,#fff4c2);box-shadow:0 0 18px rgba(255,210,63,.8);
+  transition:width .35s cubic-bezier(.2,1,.3,1)}
+#animProg .ap-row{display:flex;justify-content:space-between;margin-top:10px;
+  font-size:13px;font-weight:700;color:#8fb6ff}
+#animProg .ap-cancel{margin-top:18px;padding:10px 22px;border-radius:12px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:13.5px;color:#ff9db0;
+  background:rgba(255,92,118,.12);border:1px solid rgba(255,92,118,.5);transition:background .2s,transform .18s}
+#animProg .ap-cancel:hover{background:rgba(255,92,118,.24);transform:translateY(-2px)}
 #socToast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:210;display:flex;flex-direction:column;gap:8px;
   align-items:center;pointer-events:none;font-family:PKNB,Kanit,sans-serif}
 #socToast div{background:linear-gradient(180deg,rgba(18,28,66,.97),rgba(6,10,26,.98));border:1px solid rgba(255,210,63,.45);
@@ -10185,6 +10235,15 @@ const Profile={
 
 <button id="specVote" style="display:none">🗳 ทายตำแหน่ง</button>
 <div id="specTag" style="display:none">👀 โหมดผู้ชม</div>
+<div id="animProg">
+  <div class="ap-box">
+    <div class="ap-ttl">🎬 กำลังสร้างโจทย์ภาพเคลื่อนไหว</div>
+    <div class="ap-sub" id="apMode">เตรียมเครื่องอัด…</div>
+    <div class="ap-bar"><span id="apFill"></span></div>
+    <div class="ap-row"><span id="apCount">0 / 20</span><span id="apEta">—</span></div>
+    <button class="ap-cancel" id="apCancel">ยกเลิก</button>
+  </div>
+</div>
 <div id="socToast"></div>
 
 <script>
