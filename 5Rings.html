@@ -2494,28 +2494,410 @@ const QG = (()=>{
   }}
   ];
 
-  let BAG=[];
-  function draw1(avoid){
-    if(!BAG.length){                              // เติมถุงใหม่แบบสับไพ่
-      BAG=OBJ.slice();
-      for(let i=BAG.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
-        [BAG[i],BAG[j]]=[BAG[j],BAG[i]];}
-      if(avoid&&BAG[0].id===avoid&&BAG.length>1){[BAG[0],BAG[1]]=[BAG[1],BAG[0]];}
+  /* ================= โจทย์ระดับโหด: ต้องคิด ไม่ใช่แค่เพ่ง =================
+     ทุกโหมดมี "ช่องที่ผิดกฎ" เพียงจุดเดียวเสมอ และพิสูจน์ได้ด้วยเหตุผล */
+  const HARD=[
+
+  /* H1 · ตารางลาติน: ทุกแถว/หลักต้องมี 1–6 ครบ ไม่ซ้ำ */
+  {id:"sudoku", make(d){
+    const {c,g}=base(d);
+    const N=6;
+    const perm=[1,2,3,4,5,6];
+    for(let i=N-1;i>0;i--){const j=RI(0,i);[perm[i],perm[j]]=[perm[j],perm[i]];}
+    const shift=[0,1,2,3,4,5];
+    for(let i=N-1;i>0;i--){const j=RI(0,i);[shift[i],shift[j]]=[shift[j],shift[i]];}
+    const L=[];
+    for(let r=0;r<N;r++){L.push([]);for(let cc=0;cc<N;cc++)L[r].push(perm[(cc+shift[r])%N]);}
+    const br=RI(0,N-1), bc=RI(0,N-1), oldv=L[br][bc];
+    let nv=oldv; while(nv===oldv)nv=RI(1,N);
+    L[br][bc]=nv;
+    const cw=88, ch=88, ox=W/2-N*cw/2, oy=H/2-N*ch/2+8;
+    g.textAlign="center";g.textBaseline="middle";
+    for(let r=0;r<N;r++)for(let cc=0;cc<N;cc++){
+      const x=ox+cc*cw, y=oy+r*ch;
+      g.fillStyle=(r+cc)%2?"rgba(22,32,74,.65)":"rgba(14,22,54,.65)";
+      g.fillRect(x,y,cw,ch);
+      g.strokeStyle="rgba(140,180,255,.28)";g.lineWidth=1.6;g.strokeRect(x,y,cw,ch);
+      g.fillStyle="#eaf3ff";g.font="700 40px Kanit,sans-serif";
+      g.fillText(String(L[r][cc]),x+cw/2,y+ch/2+2);
+    }
+    g.strokeStyle="rgba(255,210,63,.55)";g.lineWidth=4;g.strokeRect(ox,oy,N*cw,N*ch);
+    return {t:"ทุกแถวและทุกหลักต้องมีเลข 1–6 ครบ ห้ามซ้ำ — หาช่องเดียวที่ทำให้ผิดกฎทั้งแถวและหลักของมัน",
+      ans:ans(ox+bc*cw+cw/2, oy+br*ch+ch/2, cw*0.40),c};
+  }},
+
+  /* H2 · ผลรวมแถว/หลัก: ช่องผิดคือจุดตัดของแถวที่รวมไม่ตรง กับหลักที่รวมไม่ตรง */
+  {id:"magicsum", make(d){
+    const {c,g}=base(d);
+    const R0=5,C0=5;
+    const M=[];
+    for(let r=0;r<R0;r++){M.push([]);for(let cc=0;cc<C0;cc++)M[r].push(RI(11,79));}
+    const rowS=M.map(r=>r.reduce((a,b)=>a+b,0));
+    const colS=[];for(let cc=0;cc<C0;cc++){let s2=0;for(let r=0;r<R0;r++)s2+=M[r][cc];colS.push(s2);}
+    const br=RI(0,R0-1), bc=RI(0,C0-1);
+    const delta=P([-9,-7,-6,-4,-3,3,4,6,7,9]);
+    M[br][bc]+=delta;                        // ผลรวมที่โชว์ = ค่าที่ถูกต้อง (ไม่แก้ตาม)
+    const cw=132, ch=88, ox=W/2-(C0+1)*cw/2, oy=H/2-(R0+1)*ch/2+6;
+    g.textAlign="center";g.textBaseline="middle";
+    for(let r=0;r<R0;r++)for(let cc=0;cc<C0;cc++){
+      const x=ox+cc*cw,y=oy+r*ch;
+      g.fillStyle="rgba(16,26,62,.6)";g.fillRect(x,y,cw,ch);
+      g.strokeStyle="rgba(140,180,255,.24)";g.lineWidth=1.5;g.strokeRect(x,y,cw,ch);
+      g.fillStyle="#eaf3ff";g.font="700 34px Kanit,sans-serif";
+      g.fillText(String(M[r][cc]),x+cw/2,y+ch/2+2);
+    }
+    for(let r=0;r<R0;r++){
+      const x=ox+C0*cw,y=oy+r*ch;
+      g.fillStyle="rgba(255,210,63,.14)";g.fillRect(x,y,cw,ch);
+      g.strokeStyle="rgba(255,210,63,.5)";g.lineWidth=2;g.strokeRect(x,y,cw,ch);
+      g.fillStyle="#ffd23f";g.font="800 34px Kanit,sans-serif";
+      g.fillText(String(rowS[r]),x+cw/2,y+ch/2+2);
+    }
+    for(let cc=0;cc<C0;cc++){
+      const x=ox+cc*cw,y=oy+R0*ch;
+      g.fillStyle="rgba(65,199,255,.13)";g.fillRect(x,y,cw,ch);
+      g.strokeStyle="rgba(65,199,255,.5)";g.lineWidth=2;g.strokeRect(x,y,cw,ch);
+      g.fillStyle="#8fe3ff";g.font="800 34px Kanit,sans-serif";
+      g.fillText(String(colS[cc]),x+cw/2,y+ch/2+2);
+    }
+    g.fillStyle="#9db4dd";g.font="600 20px Kanit,sans-serif";
+    g.fillText("ผลรวมแถว →",ox+C0*cw+cw/2,oy-26);
+    return {t:"ตัวเลขทองท้ายแถวและฟ้าท้ายหลักคือผลรวมที่ถูกต้อง — หาช่องเดียวที่ทำให้ทั้งแถวและหลักของมันรวมไม่ตรง",
+      ans:ans(ox+bc*cw+cw/2, oy+br*ch+ch/2, cw*0.34),c};
+  }},
+
+  /* H3 · ตารางสมการ: มีสมการเดียวที่ผลลัพธ์ผิด */
+  {id:"equations", make(d){
+    const {c,g}=base(d);
+    const cols=3, rows=4, n=cols*rows;
+    const eqs=[];
+    for(let i=0;i<n;i++){
+      const op=P(["+","−","×"]);
+      let a,b,r;
+      if(op==="×"){a=RI(6,19);b=RI(4,12);r=a*b;}
+      else if(op==="+"){a=RI(38,299);b=RI(29,288);r=a+b;}
+      else{a=RI(120,480);b=RI(23,110);r=a-b;}
+      eqs.push({a,b,op,r});
+    }
+    const oi=RI(0,n-1);
+    const off=P([-9,-7,-6,-4,-3,3,4,6,7,9]);
+    eqs[oi].r+=off;
+    const cw=(W-140)/cols, ch=118, ox=70, oy=H/2-rows*ch/2+4;
+    g.textAlign="center";g.textBaseline="middle";
+    eqs.forEach((e,i)=>{
+      const x=ox+(i%cols)*cw, y=oy+Math.floor(i/cols)*ch;
+      rr(g,x+8,y+8,cw-16,ch-16,14);
+      g.fillStyle="rgba(16,26,62,.72)";g.fill();
+      g.strokeStyle="rgba(140,180,255,.26)";g.lineWidth=2;g.stroke();
+      g.fillStyle="#eaf3ff";g.font="700 36px Kanit,sans-serif";
+      g.fillText(e.a+" "+e.op+" "+e.b+" = "+e.r, x+cw/2, y+ch/2+2);
+    });
+    return {t:"มีสมการเดียวเท่านั้นที่ผลลัพธ์ผิด — วงตรงสมการนั้น",
+      ans:ans(ox+(oi%cols)*cw+cw/2, oy+Math.floor(oi/cols)*ch+ch/2, cw*0.26),c};
+  }},
+
+  /* H4 · ลำดับนาฬิกา: เดินหน้าทีละเท่า ๆ กัน มีเรือนเดียวผิดจังหวะ */
+  {id:"clockseq", make(d){
+    const {c,g}=base(d);
+    const n=6, step=P([25,35,40,50,55,65,70]);
+    let t0=RI(0,11)*60+RI(0,59);
+    const times=[];for(let i=0;i<n;i++)times.push((t0+i*step)%720);
+    const oi=RI(1,n-2);
+    let off=P([-25,-20,-15,15,20,25]);
+    while(off%step===0||step%Math.abs(off)===0)off=P([-23,-17,-13,13,17,23]);
+    times[oi]=((times[oi]+off)%720+720)%720;
+    const cols=3, rows=2, cw=W/cols, ch=(H-60)/rows;
+    for(let i=0;i<n;i++){
+      const cx=cw*(i%cols)+cw/2, cy=60+ch*Math.floor(i/cols)+ch/2-20;
+      const Rr=Math.min(cw,ch)*0.33;
+      g.beginPath();g.arc(cx,cy,Rr,0,TAU);
+      g.fillStyle="rgba(12,20,50,.85)";g.fill();
+      g.strokeStyle="#dfe9ff";g.lineWidth=5;g.stroke();
+      for(let k=0;k<12;k++){
+        const a=-Math.PI/2+k/12*TAU;
+        g.strokeStyle=k%3===0?"#ffd23f":"#8fb6ff";g.lineWidth=k%3===0?5:3;
+        g.beginPath();
+        g.moveTo(cx+Math.cos(a)*(Rr-16),cy+Math.sin(a)*(Rr-16));
+        g.lineTo(cx+Math.cos(a)*(Rr-4),cy+Math.sin(a)*(Rr-4));g.stroke();
+      }
+      const hh=Math.floor(times[i]/60)%12, mm=times[i]%60;
+      const ah=-Math.PI/2+((hh+mm/60)/12)*TAU, am=-Math.PI/2+(mm/60)*TAU;
+      g.lineCap="round";
+      g.strokeStyle="#ffffff";g.lineWidth=9;
+      g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(ah)*Rr*0.50,cy+Math.sin(ah)*Rr*0.50);g.stroke();
+      g.strokeStyle="#8fe3ff";g.lineWidth=6;
+      g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(am)*Rr*0.76,cy+Math.sin(am)*Rr*0.76);g.stroke();
+      g.fillStyle="#ffd23f";g.beginPath();g.arc(cx,cy,7,0,TAU);g.fill();
+      g.fillStyle="#9db4dd";g.font="700 24px Kanit,sans-serif";g.textAlign="center";
+      g.fillText("เรือนที่ "+(i+1),cx,cy+Rr+34);
+    }
+    const cx=cw*(oi%cols)+cw/2, cy=60+ch*Math.floor(oi/cols)+ch/2-20;
+    return {t:"นาฬิกาทั้งแถวเดินหน้าทีละเท่า ๆ กันตามลำดับ — หาเรือนเดียวที่เวลาผิดจังหวะ",
+      ans:ans(cx,cy,Math.min(cw,ch)*0.30),c};
+  }},
+
+  /* H5 · ตาชั่ง: กำหนดค่าจาก 2 บรรทัดบน แล้วหาบรรทัดที่ผิด */
+  {id:"balance", make(d){
+    const {c,g}=base(d);
+    const CIR=1, star=RI(2,3), tri=RI(3,4);
+    const V={"●":CIR,"★":star,"▲":tri};
+    const drawRow=(y,left,right,head)=>{
+      g.textAlign="center";g.textBaseline="middle";
+      g.font="42px serif";
+      let x=180;
+      for(const s of left){g.fillStyle=s==="●"?"#8fe3ff":(s==="★"?"#ffd23f":"#ff9db0");
+        g.fillText(s,x,y);x+=50;}
+      g.fillStyle="#eaf3ff";g.font="700 40px Kanit,sans-serif";g.fillText("=",W/2-60,y);
+      x=W/2-10;
+      for(const s of right){g.font="34px serif";
+        g.fillStyle=s==="●"?"#8fe3ff":(s==="★"?"#ffd23f":"#ff9db0");
+        g.fillText(s,x,y);x+=36;}
+      if(head){g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+        g.textAlign="left";g.fillText(head,60,y-52);}
+    };
+    const mk=(sym,k)=>new Array(k).fill(sym);
+    const rowsY=[];
+    /* กติกา 2 บรรทัด */
+    g.fillStyle="rgba(255,210,63,.10)";g.fillRect(40,70,W-80,168);
+    g.strokeStyle="rgba(255,210,63,.4)";g.lineWidth=2;g.strokeRect(40,70,W-80,168);
+    drawRow(140,["★"],mk("●",star),"กติกา");
+    drawRow(210,["▲"],mk("●",tri),null);
+    /* 4 บรรทัดให้ตรวจ */
+    const cand=[];
+    for(let i=0;i<4;i++){
+      const a=RI(1,2), b=RI(1,2);
+      cand.push({left:mk("★",a).concat(mk("▲",b)), val:a*star+b*tri});
+    }
+    const oi=RI(0,3);
+    cand.forEach((cd,i)=>{
+      const y=330+i*88; rowsY.push(y);
+      let rv=cd.val;
+      if(i===oi){ rv=cd.val+P([-2,-1,1,2]); if(rv<1)rv=cd.val+2; }
+      drawRow(y,cd.left,mk("●",rv),i===0?"ตรวจสอบ":null);
+    });
+    return {t:"สองบรรทัดบนคือกติกาแลกเปลี่ยน — หาบรรทัดเดียวด้านล่างที่คำนวณแล้วไม่จริง",
+      ans:ans(W/2,rowsY[oi],120),c};
+  }},
+
+  /* H6 · จอ 7 ส่วน: ตัวเลขที่แสดงต้องตรงกับเลขกำกับ */
+  {id:"sevenseg", make(d){
+    const {c,g}=base(d);
+    const SEG={0:"abcdef",1:"bc",2:"abdeg",3:"abcdg",4:"bcfg",5:"acdfg",
+      6:"acdefg",7:"abc",8:"abcdefg",9:"abcdfg"};
+    const n=8, sw=100, sh=170, gap=26;
+    const ox=W/2-(n*sw+(n-1)*gap)/2, oy=H/2-sh/2-20;
+    const digits=[];for(let i=0;i<n;i++)digits.push(RI(0,9));
+    const oi=RI(0,n-1);
+    let shown=digits[oi]; while(shown===digits[oi])shown=RI(0,9);
+    for(let i=0;i<n;i++){
+      const x=ox+i*(sw+gap), y=oy;
+      const on=SEG[i===oi?shown:digits[i]];
+      const t=13, L=sw-26, Vv=(sh-26)/2;
+      const seg=(k,px,py,w2,h2)=>{
+        g.fillStyle=on.includes(k)?"#ff5c76":"rgba(255,92,118,.09)";
+        if(on.includes(k)){g.shadowColor="#ff5c76";g.shadowBlur=16;}else g.shadowBlur=0;
+        rr(g,px,py,w2,h2,5);g.fill();g.shadowBlur=0;
+      };
+      seg("a",x+13+t/2,y+8,L-t,t);
+      seg("d",x+13+t/2,y+sh-8-t,L-t,t);
+      seg("g",x+13+t/2,y+sh/2-t/2,L-t,t);
+      seg("f",x+13,y+8+t/2,t,Vv-t);
+      seg("b",x+13+L-t,y+8+t/2,t,Vv-t);
+      seg("e",x+13,y+sh/2+t/2,t,Vv-t);
+      seg("c",x+13+L-t,y+sh/2+t/2,t,Vv-t);
+      g.fillStyle="#ffd23f";g.font="800 40px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText(String(digits[i]),x+sw/2,y+sh+50);
+    }
+    return {t:"ตัวเลขบนจอ 7 ส่วนต้องตรงกับเลขสีทองด้านล่าง — หาหลักเดียวที่ไม่ตรงกัน",
+      ans:ans(ox+oi*(sw+gap)+sw/2, oy+sh/2, sw*0.46),c};
+  }},
+
+  /* H7 · โซ่โดมิโน: ปลายที่ติดกันต้องแต้มเท่ากัน */
+  {id:"domino", make(d){
+    const {c,g}=base(d);
+    const n=6;
+    const tiles=[];
+    let cur=RI(0,6);
+    for(let i=0;i<n;i++){const nx=RI(0,6);tiles.push([cur,nx]);cur=nx;}
+    const oi=RI(0,n-2);
+    let bad=tiles[oi+1][0]; while(bad===tiles[oi][1])bad=RI(0,6);
+    tiles[oi+1][0]=bad;
+    const tw=150, th=290, gap=14;
+    const ox=W/2-(n*tw+(n-1)*gap)/2, oy=H/2-th/2;
+    const pip=(x,y,v)=>{
+      const P6={0:[],1:[[.5,.5]],2:[[.3,.28],[.7,.72]],3:[[.3,.28],[.5,.5],[.7,.72]],
+        4:[[.3,.28],[.7,.28],[.3,.72],[.7,.72]],
+        5:[[.3,.28],[.7,.28],[.5,.5],[.3,.72],[.7,.72]],
+        6:[[.3,.24],[.7,.24],[.3,.5],[.7,.5],[.3,.76],[.7,.76]]};
+      for(const q of P6[v]){
+        g.fillStyle="#0d1330";g.beginPath();
+        g.arc(x+q[0]*tw,y+q[1]*(th/2),11,0,TAU);g.fill();
+      }
+    };
+    tiles.forEach((t2,i)=>{
+      const x=ox+i*(tw+gap);
+      rr(g,x,oy,tw,th,16);
+      const gr=g.createLinearGradient(x,oy,x,oy+th);
+      gr.addColorStop(0,"#fdfefe");gr.addColorStop(1,"#cfd8ea");
+      g.fillStyle=gr;g.fill();g.strokeStyle="#8a97b8";g.lineWidth=3;g.stroke();
+      g.strokeStyle="#8a97b8";g.lineWidth=3;
+      g.beginPath();g.moveTo(x+10,oy+th/2);g.lineTo(x+tw-10,oy+th/2);g.stroke();
+      pip(x,oy,t2[0]);pip(x,oy+th/2,t2[1]);
+    });
+    /* รอยต่อ = ครึ่งล่างของตัวซ้าย ชนครึ่งบนของตัวขวา */
+    const jx=ox+oi*(tw+gap)+tw+gap/2;
+    return {t:"อ่านโดมิโนจากซ้ายไปขวา ปลายล่างของตัวหน้าต้องมีแต้มเท่าปลายบนของตัวถัดไป — หารอยต่อที่แต้มไม่ตรงกัน",
+      ans:ans(jx, oy+th/2, 74),c};
+  }},
+
+  /* H8 · ลำดับจำนวนเหลี่ยม: เพิ่มทีละ 1 มีรูปเดียวที่ผิด */
+  {id:"polyseq", make(d){
+    const {c,g}=base(d);
+    const n=6, start=RI(3,5);
+    const sides=[];for(let i=0;i<n;i++)sides.push(start+i);
+    const oi=RI(1,n-1);
+    sides[oi]+=P([-1,1,1]);
+    if(sides[oi]<3)sides[oi]=3;
+    const cw=W/n;
+    const Rr=Math.min(cw*0.40,118);
+    for(let i=0;i<n;i++){
+      const cx=cw*i+cw/2, cy=H/2-10, k=sides[i];
+      g.beginPath();
+      for(let s2=0;s2<k;s2++){
+        const a=-Math.PI/2+s2/k*TAU;
+        const x=cx+Math.cos(a)*Rr, y=cy+Math.sin(a)*Rr;
+        s2?g.lineTo(x,y):g.moveTo(x,y);
+      }
+      g.closePath();
+      const gr=g.createLinearGradient(cx-Rr,cy-Rr,cx+Rr,cy+Rr);
+      gr.addColorStop(0,"rgba(65,199,255,.30)");gr.addColorStop(1,"rgba(91,43,214,.30)");
+      g.fillStyle=gr;g.fill();
+      g.strokeStyle="#8fe3ff";g.lineWidth=5;g.stroke();
+      g.fillStyle="#9db4dd";g.font="700 24px Kanit,sans-serif";g.textAlign="center";
+      g.fillText("รูปที่ "+(i+1),cx,cy+Rr+44);
+    }
+    return {t:"จำนวนเหลี่ยมของรูปต้องเพิ่มทีละ 1 จากซ้ายไปขวา — หารูปเดียวที่จำนวนเหลี่ยมผิดลำดับ",
+      ans:ans(cw*oi+cw/2, H/2-10, Rr*0.70),c};
+  }},
+
+  /* H9 · เลขฐานสอง: จุดทึบ=1 โปร่ง=0 ต้องตรงกับเลขทางขวา */
+  {id:"binrow", make(d){
+    const {c,g}=base(d);
+    const bits=6, rows=7;
+    const vals=[];
+    for(let i=0;i<rows;i++)vals.push(RI(3,62));
+    const oi=RI(0,rows-1);
+    let show=vals[oi];
+    for(let g2=0;g2<40&&show===vals[oi];g2++)
+      show=Math.max(1,Math.min(63,vals[oi]+P([-16,-8,-4,-2,-1,1,2,4,8,16])));
+    if(show===vals[oi])show=vals[oi]===63?62:vals[oi]+1;
+    const dw=78, ox=W/2-(bits*dw)/2-70, oy=H/2-rows*76/2+10;
+    for(let r=0;r<rows;r++){
+      const y=oy+r*76+38;
+      const v=vals[r];
+      for(let b=0;b<bits;b++){
+        const on=(v>>(bits-1-b))&1;
+        const x=ox+b*dw+dw/2;
+        g.beginPath();g.arc(x,y,23,0,TAU);
+        if(on){g.fillStyle="#ffd23f";g.shadowColor="#ffd23f";g.shadowBlur=14;g.fill();g.shadowBlur=0;}
+        else{g.fillStyle="rgba(255,255,255,.05)";g.fill();
+          g.strokeStyle="rgba(255,210,63,.55)";g.lineWidth=3;g.stroke();}
+      }
+      g.fillStyle="#eaf3ff";g.font="800 38px Kanit,sans-serif";
+      g.textAlign="left";g.textBaseline="middle";
+      g.fillText("= "+(r===oi?show:v), ox+bits*dw+24, y);
+    }
+    g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("จุดทึบ = 1   ·   จุดโปร่ง = 0   ·   อ่านจากซ้าย (32 16 8 4 2 1)",W/2,oy-24);
+    return {t:"อ่านจุดเป็นเลขฐานสองแล้วต้องตรงกับเลขทางขวา — หาแถวเดียวที่ไม่ตรง",
+      ans:ans(ox+bits*dw/2, oy+oi*76+38, 150),c};
+  }},
+
+  /* H10 · ตารางจุด: จำนวนจุดต้องเพิ่มทีละ 1 ตามหลัก */
+  {id:"matrixdots", make(d){
+    const {c,g}=base(d);
+    const cols=5, rows=4, start=RI(4,6);
+    const cw=(W-120)/cols, ch=(H-140)/rows, ox=60, oy=90;
+    const br=RI(0,rows-1), bc=RI(0,cols-1);
+    for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
+      const x=ox+cc*cw, y=oy+r*ch;
+      g.fillStyle=(r+cc)%2?"rgba(20,30,70,.55)":"rgba(12,20,50,.55)";
+      g.fillRect(x,y,cw,ch);
+      g.strokeStyle="rgba(140,180,255,.2)";g.lineWidth=1.5;g.strokeRect(x,y,cw,ch);
+      let k=start+cc;
+      if(r===br&&cc===bc)k+=P([-1,1]);
+      const Rr=Math.min(cw,ch)*0.30;
+      for(let i=0;i<k;i++){
+        const a=-Math.PI/2+i/k*TAU;
+        g.fillStyle=cc%2?"#8fe3ff":"#ffd23f";
+        g.beginPath();g.arc(x+cw/2+Math.cos(a)*Rr, y+ch/2+Math.sin(a)*Rr, 9,0,TAU);g.fill();
+      }
+    }
+    g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("ทุกช่องในหลักเดียวกันต้องมีจุดเท่ากัน และเพิ่มทีละ 1 เมื่อไปทางขวา",W/2,52);
+    return {t:"จำนวนจุดในแต่ละหลักต้องเท่ากันทั้งหลัก และเพิ่มทีละ 1 จากซ้ายไปขวา — หาช่องเดียวที่จำนวนจุดผิด",
+      ans:ans(ox+bc*cw+cw/2, oy+br*ch+ch/2, Math.min(cw,ch)*0.40),c};
+  }},
+
+  /* H11 · กองลูกบาศก์: ป้ายจำนวนต้องตรงกับที่นับได้ */
+  {id:"isocube", make(d){
+    const {c,g}=base(d);
+    const n=6, counts=[];
+    for(let i=0;i<n;i++)counts.push(RI(3,9));
+    const oi=RI(0,n-1);
+    let show=counts[oi]+P([-2,-1,1,2]); if(show<1)show=counts[oi]+2;
+    const cw=W/n, S2=30, baseY=H-160;
+    for(let i=0;i<n;i++){
+      const cx=cw*i+cw/2;
+      for(let k=0;k<counts[i];k++){
+        const y=baseY-k*S2*1.15;
+        /* ลูกบาศก์ isometric 3 หน้า */
+        g.beginPath();g.moveTo(cx,y-S2*0.58);g.lineTo(cx+S2,y);g.lineTo(cx,y+S2*0.58);g.lineTo(cx-S2,y);g.closePath();
+        g.fillStyle="#8fb6ff";g.fill();g.strokeStyle="#0a1029";g.lineWidth=2;g.stroke();
+        g.beginPath();g.moveTo(cx-S2,y);g.lineTo(cx,y+S2*0.58);g.lineTo(cx,y+S2*1.16);g.lineTo(cx-S2,y+S2*0.58);g.closePath();
+        g.fillStyle="#3d6bcf";g.fill();g.stroke();
+        g.beginPath();g.moveTo(cx+S2,y);g.lineTo(cx,y+S2*0.58);g.lineTo(cx,y+S2*1.16);g.lineTo(cx+S2,y+S2*0.58);g.closePath();
+        g.fillStyle="#24468f";g.fill();g.stroke();
+      }
+      g.fillStyle="#ffd23f";g.font="800 36px Kanit,sans-serif";g.textAlign="center";
+      g.fillText(String(i===oi?show:counts[i]),cx,baseY+90);
+      g.fillStyle="#9db4dd";g.font="600 19px Kanit,sans-serif";
+      g.fillText("กองที่ "+(i+1),cx,baseY+124);
+    }
+    const cyTop=baseY-(counts[oi]-1)*S2*1.15;
+    return {t:"เลขสีทองใต้กองคือจำนวนลูกบาศก์ที่ควรมี — หากองเดียวที่นับแล้วไม่ตรงกับเลข",
+      ans:ans(cw*oi+cw/2, (cyTop+baseY)/2, 78),c};
+  }}
+  ];
+
+  let BAG=[], BAGH=[];
+  function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+  function draw1(pool,bagRef,avoid){
+    if(!bagRef.b.length){
+      bagRef.b=shuf(pool.slice());
+      if(avoid&&bagRef.b[0].id===avoid&&bagRef.b.length>1)[bagRef.b[0],bagRef.b[1]]=[bagRef.b[1],bagRef.b[0]];
     }
     let idx=0;
-    if(avoid&&BAG[0].id===avoid&&BAG.length>1)idx=1;
-    return BAG.splice(idx,1)[0];
+    if(avoid&&bagRef.b[0].id===avoid&&bagRef.b.length>1)idx=1;
+    return bagRef.b.splice(idx,1)[0];
   }
+  const _bagE={get b(){return BAG;},set b(v){BAG=v;}};
+  const _bagH={get b(){return BAGH;},set b(v){BAGH=v;}};
+  /* d < .30 → โจทย์หาส่วนที่หายไป · d >= .30 → โจทย์ต้องคิด (โหด) */
   function make(d, avoid){
     d=Math.max(0,Math.min(1,d==null?.6:d));
-    const o=draw1(avoid);
+    const useHard = d>=0.30;
+    const o=useHard ? draw1(HARD,_bagH,avoid) : draw1(OBJ,_bagE,avoid);
     const r=o.make(d);
-    return {id:uid(), mode:o.id,
-      text:r.t+"  ·  ระดับ "+(d<.34?"⭐":d<.67?"⭐⭐":"⭐⭐⭐"),
-      media:{type:"image",dataUrl:r.c.toDataURL("image/jpeg",0.88)},
+    const stars = useHard ? (d<.55?"⭐⭐⭐":(d<.8?"⭐⭐⭐⭐":"⭐⭐⭐⭐⭐")) : (d<.18?"⭐":"⭐⭐");
+    return {id:uid(), mode:o.id, hard:useHard,
+      text:r.t+"  ·  ระดับ "+stars,
+      media:{type:"image",dataUrl:r.c.toDataURL("image/jpeg",0.92)},
       ans:r.ans};
   }
-  return {make, modes:OBJ.length, list:OBJ.map(o=>o.id)};
+  return {make, modes:OBJ.length+HARD.length, easyModes:OBJ.length, hardModes:HARD.length,
+    list:OBJ.map(o=>o.id).concat(HARD.map(o=>o.id))};
 })();
 
 function genQuestion(seed){
@@ -2625,7 +3007,8 @@ const Ed={
     const start = App.editor.questions.length;
     let last=null;
     for(let i=0;i<want;i++){
-      const d = 0.30 + (i/Math.max(1,want-1))*0.68;      // ไล่จากยากขึ้นเรื่อย ๆ
+      /* 3 ข้อแรกอุ่นเครื่อง (หาส่วนที่หายไป) จากนั้นเป็นโจทย์ต้องคิดล้วน ๆ */
+      const d = i<3 ? (0.14+i*0.05) : (0.42 + ((i-3)/Math.max(1,want-4))*0.56);
       const q = QG.make(Math.min(1,d), last);
       last = q.mode;
       q.text = "ข้อ "+(start+i+1)+" · "+q.text;
@@ -2642,7 +3025,7 @@ const Ed={
   reroll(q,idx){
     const last=q.mode||null;
     const total=Math.max(1,App.editor.questions.length);
-    const d=idx<0?1:(0.30+(idx/total)*0.68);
+    const d=idx<0?1:(idx<3?(0.14+idx*0.05):(0.42+((idx-3)/Math.max(1,total-4))*0.56));
     const n=QG.make(Math.min(1,d),last);
     q.mode=n.mode;q.media=n.media;q.ans=n.ans;
     q.text=(idx<0?"👑 FINAL · ":("ข้อ "+(idx+1)+" · "))+n.text;
