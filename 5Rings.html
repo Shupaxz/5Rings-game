@@ -672,7 +672,13 @@ textarea.inp{resize:vertical;min-height:64px}
   background:#0a1230;border:1px solid #24387c;color:var(--ink);margin-bottom:10px;transition:.2s;font-size:16px}
 .helperbtn:hover:not(:disabled){border-color:var(--gold);background:rgba(255,210,63,.06);transform:translateX(4px)}
 .helperbtn:disabled{opacity:.35;cursor:not-allowed}
-.helperbtn .ic{font-size:26px}
+.helperbtn .ic{width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;background:rgba(255,210,63,.10);border:1px solid rgba(255,210,63,.28);color:var(--gold);
+  transition:transform .22s cubic-bezier(.2,1.5,.35,1),box-shadow .25s,background .2s}
+.helperbtn .ic svg{width:26px;height:26px;display:block}
+.helperbtn:hover:not(:disabled) .ic{transform:scale(1.1) rotate(-6deg);
+  background:rgba(255,210,63,.20);box-shadow:0 0 22px rgba(255,210,63,.45)}
+.helperbtn:active:not(:disabled){transform:translateX(4px) scale(.985)}
 .helperbtn small{display:block;color:var(--dim);font-size:12px;font-weight:400}
 .helperbtn .cnt{margin-left:auto;font-weight:800;color:var(--gold)}
 
@@ -1597,11 +1603,23 @@ textarea.inp{resize:vertical;min-height:64px}
   <div class="card fadein" style="width:min(420px,92vw)">
     <h2>🧰 ตัวช่วยของทีม</h2>
     <div class="sub">ใช้ได้อย่างละ 1 ครั้งตลอดเกม</div>
-    <button class="helperbtn" id="hSwap"><span class="ic">🔄</span>
+    <button class="helperbtn" id="hSwap"><span class="ic"><svg viewBox="0 0 48 48" fill="none">
+      <path d="M8 24a16 16 0 0 1 27-11.6" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <path d="M40 24a16 16 0 0 1-27 11.6" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <path d="M36 6v9h-9" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 42v-9h9" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg></span>
       <span>เปลี่ยนโจทย์<small>สุ่มโจทย์ข้อใหม่มาแทนข้อนี้</small></span><span class="cnt" id="hSwapC">×1</span></button>
-    <button class="helperbtn" id="hFifty"><span class="ic">🌓</span>
+    <button class="helperbtn" id="hFifty"><span class="ic"><svg viewBox="0 0 48 48" fill="none">
+      <path d="M24 6a18 18 0 0 1 0 36z" fill="currentColor"/>
+      <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="3.6"/>
+      <path d="M24 1v46" stroke="#fff8dc" stroke-width="3.4" stroke-linecap="round"/>
+    </svg></span>
       <span>ตัด 50:50<small>มืดครึ่งภาพที่ไม่มีคำตอบ — เหลือให้หาแค่ครึ่งเดียว</small></span><span class="cnt" id="hFiftyC">×1</span></button>
-    <button class="helperbtn" id="hMe"><span class="ic">🙋</span>
+    <button class="helperbtn" id="hMe"><span class="ic"><svg viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="13" r="7" stroke="currentColor" stroke-width="4"/>
+      <path d="M24 21v14M13 41l11-9 11 9" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg></span>
       <span>ให้ฉันเป็นคนเล่นข้อนี้<small>สำหรับทีมที่มีผู้เล่น 2 คน</small></span><span class="cnt">→</span></button>
     <button class="btn ghost sm" id="helperClose" style="width:100%">ปิด</button>
   </div>
@@ -2871,6 +2889,235 @@ const QG = (()=>{
   }}
   ];
 
+  /* ================= ระดับโหดสุด: ต้องสังเกต + พิจารณาหลายชั้น ================= */
+  const BRUTAL=[
+
+  /* X1 · เงาผิดดวง: ทุกวัตถุรับแสงจากดวงเดียวกัน มีชิ้นเดียวที่เงาชี้ผิดทาง
+     (ต้องหาทิศแสงจากส่วนใหญ่ก่อน แล้วค่อยไล่ทีละชิ้น) */
+  {id:"shadowlogic", make(d){
+    const {c,g}=base(d);
+    const cols=5,rows=3,n=cols*rows;
+    const cw=(W-120)/cols, ch=(H-190)/rows, ox=60, oy=120;
+    const lightA=R(0,TAU);
+    const oi=RI(0,n-1);
+    let badA=lightA+R(1.1,2.2)*P([-1,1]);
+    /* ดวงอาทิตย์บอกใบ้ที่มุมภาพ */
+    const sx=W/2+Math.cos(lightA+Math.PI)*430, sy=170+Math.sin(lightA+Math.PI)*150;
+    const sg=g.createRadialGradient(sx,sy,4,sx,sy,120);
+    sg.addColorStop(0,"rgba(255,240,190,.55)");sg.addColorStop(1,"rgba(255,210,63,0)");
+    g.fillStyle=sg;g.beginPath();g.arc(sx,sy,120,0,TAU);g.fill();
+    for(let i=0;i<n;i++){
+      const cx=ox+(i%cols)*cw+cw/2, cy=oy+Math.floor(i/cols)*ch+ch/2;
+      const a=(i===oi?badA:lightA), rr2=Math.min(cw,ch)*0.19;
+      const L=rr2*R(1.5,1.9);
+      /* เงาทอดยาว */
+      g.save();g.translate(cx,cy);g.rotate(a);
+      g.fillStyle="rgba(0,0,0,.55)";
+      g.beginPath();g.ellipse(L*0.62,0,L*0.72,rr2*0.44,0,0,TAU);g.fill();
+      g.restore();
+      /* ตัววัตถุ */
+      const gr=g.createRadialGradient(cx-rr2*0.35,cy-rr2*0.4,rr2*0.1,cx,cy,rr2);
+      gr.addColorStop(0,"#eaf3ff");gr.addColorStop(.55,"#8fb6ff");gr.addColorStop(1,"#2f4d94");
+      g.fillStyle=gr;g.beginPath();g.arc(cx,cy,rr2,0,TAU);g.fill();
+      g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=2;g.stroke();
+    }
+    const cx=ox+(oi%cols)*cw+cw/2, cy=oy+Math.floor(oi/cols)*ch+ch/2;
+    return {t:"ทุกลูกรับแสงจากดวงเดียวกัน เงาจึงต้องทอดไปทางเดียวกันหมด — หาลูกเดียวที่เงาผิดทาง",
+      ans:ans(cx,cy,Math.min(cw,ch)*0.30),c};
+  }},
+
+  /* X2 · กฎสองชั้น: สี↔จำนวนขา ต้องจับคู่กันเสมอ มีตัวเดียวที่ผิดคู่
+     (ต้องถอดกฎเองจากตัวอย่างส่วนใหญ่ ไม่มีใครบอก) */
+  {id:"rulepair", make(d){
+    const {c,g}=base(d);
+    const PAL=[["#ff5c76",3],["#ffd23f",4],["#41c7ff",5],["#35e07a",6]];
+    const cols=5,rows=3,n=cols*rows;
+    const cw=(W-100)/cols, ch=(H-200)/rows, ox=50, oy=140;
+    const oi=RI(0,n-1);
+    const picks=[];
+    for(let i=0;i<n;i++)picks.push(RI(0,PAL.length-1));
+    for(let i=0;i<n;i++){
+      const cx=ox+(i%cols)*cw+cw/2, cy=oy+Math.floor(i/cols)*ch+ch/2;
+      let [colr,spikes]=PAL[picks[i]];
+      if(i===oi){ let j=picks[i]; while(j===picks[i])j=RI(0,PAL.length-1);
+        spikes=PAL[j][1]; }
+      const rr2=Math.min(cw,ch)*0.20;
+      /* หนามรอบตัว = "จำนวนขา" */
+      g.save();g.translate(cx,cy);g.rotate(R(0,TAU));
+      g.strokeStyle=colr;g.lineWidth=7;g.lineCap="round";
+      g.shadowColor=colr;g.shadowBlur=14;
+      for(let k=0;k<spikes;k++){
+        const a=k/spikes*TAU;
+        g.beginPath();g.moveTo(Math.cos(a)*rr2*0.9,Math.sin(a)*rr2*0.9);
+        g.lineTo(Math.cos(a)*rr2*1.75,Math.sin(a)*rr2*1.75);g.stroke();
+      }
+      g.shadowBlur=0;
+      g.beginPath();g.arc(0,0,rr2,0,TAU);g.fillStyle=colr;g.fill();
+      g.fillStyle="rgba(255,255,255,.25)";
+      g.beginPath();g.arc(-rr2*0.3,-rr2*0.32,rr2*0.34,0,TAU);g.fill();
+      g.restore();
+    }
+    g.fillStyle="#9db4dd";g.font="600 21px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("สีของตัวไหน = จำนวนหนามเท่าไหร่  ให้ดูจากตัวส่วนใหญ่แล้วถอดกฎเอง",W/2,68);
+    const cx=ox+(oi%cols)*cw+cw/2, cy=oy+Math.floor(oi/cols)*ch+ch/2;
+    return {t:"สีแต่ละสีผูกกับจำนวนหนามคงที่เสมอ — หาตัวเดียวที่สีกับจำนวนหนามไม่เข้าคู่ตามกฎ",
+      ans:ans(cx,cy,Math.min(cw,ch)*0.30),c};
+  }},
+
+  /* X3 · ทางเดินเขาวงกต: มีจุดเดียวที่กำแพงขาด ทำให้ทะลุออกนอกเส้นทางได้ */
+  {id:"mazegap", make(d){
+    const {c,g}=base(d);
+    const cols=13, rows=8;
+    const cw=(W-120)/cols, ch=(H-140)/rows, ox=60, oy=70;
+    /* สร้างกำแพงล้อมพื้นที่แบบสุ่ม แล้วเจาะรูเดียว */
+    const V=[],Hh=[];
+    for(let r=0;r<rows;r++){V.push([]);for(let cc=0;cc<=cols;cc++)V[r].push(cc===0||cc===cols||Math.random()<0.30);}
+    for(let r=0;r<=rows;r++){Hh.push([]);for(let cc=0;cc<cols;cc++)Hh[r].push(r===0||r===rows||Math.random()<0.30);}
+    /* เลือกกำแพงรอบนอกมาเจาะ 1 ช่อง (จุดเดียวที่ "รั่ว") */
+    const side=P(["T","B","L","R"]);
+    let gx,gy;
+    if(side==="T"){const k=RI(1,cols-2);Hh[0][k]=false;gx=ox+k*cw+cw/2;gy=oy;}
+    else if(side==="B"){const k=RI(1,cols-2);Hh[rows][k]=false;gx=ox+k*cw+cw/2;gy=oy+rows*ch;}
+    else if(side==="L"){const k=RI(1,rows-2);V[k][0]=false;gx=ox;gy=oy+k*ch+ch/2;}
+    else{const k=RI(1,rows-2);V[k][cols]=false;gx=ox+cols*cw;gy=oy+k*ch+ch/2;}
+    g.strokeStyle="#8fe3ff";g.lineWidth=Math.max(4,L(7,5,d));g.lineCap="round";
+    g.shadowColor="rgba(65,199,255,.55)";g.shadowBlur=10;
+    for(let r=0;r<rows;r++)for(let cc=0;cc<=cols;cc++){
+      if(!V[r][cc])continue;
+      const x=ox+cc*cw;g.beginPath();g.moveTo(x,oy+r*ch);g.lineTo(x,oy+(r+1)*ch);g.stroke();
+    }
+    for(let r=0;r<=rows;r++)for(let cc=0;cc<cols;cc++){
+      if(!Hh[r][cc])continue;
+      const y=oy+r*ch;g.beginPath();g.moveTo(ox+cc*cw,y);g.lineTo(ox+(cc+1)*cw,y);g.stroke();
+    }
+    g.shadowBlur=0;
+    g.fillStyle="#9db4dd";g.font="600 21px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("กำแพงรอบนอกต้องปิดสนิททุกด้าน",W/2,42);
+    return {t:"กำแพงรอบนอกของเขาวงกตต้องปิดสนิท — หาช่องเดียวที่กำแพงด้านนอกขาด ทำให้ทะลุออกได้",
+      ans:ans(gx,gy,Math.max(46,Math.min(cw,ch)*0.75)),c};
+  }},
+
+  /* X4 · เส้นทางลูกศร: เดินตามลูกศรทีละช่อง มีช่องเดียวที่ชี้ออกนอกเส้นทาง */
+  {id:"arrowpath", make(d){
+    const {c,g}=base(d);
+    const cols=9, rows=6;
+    const cw=(W-100)/cols, ch=(H-120)/rows, ox=50, oy=60;
+    const DIR=[[1,0],[0,1],[-1,0],[0,-1]];
+    /* สร้างทางเดินจากซ้ายบนไปขวาล่าง */
+    const path=[];let r=0,cc=0;
+    const grid=Array.from({length:rows},()=>new Array(cols).fill(-1));
+    while(cc<cols-1||r<rows-1){
+      path.push([r,cc]);
+      let dir;
+      if(cc===cols-1)dir=1; else if(r===rows-1)dir=0; else dir=Math.random()<0.62?0:1;
+      grid[r][cc]=dir;
+      if(dir===0)cc++; else r++;
+    }
+    path.push([r,cc]);grid[r][cc]=0;
+    const oi=RI(1,path.length-2);
+    const [br,bc]=path[oi];
+    let bad=grid[br][bc]; while(bad===grid[br][bc])bad=RI(0,3);
+    /* วาดทุกช่อง: ช่องนอกเส้นทางสุ่มทิศ (ตัวลวง) */
+    for(let rr2=0;rr2<rows;rr2++)for(let c2=0;c2<cols;c2++){
+      const x=ox+c2*cw+cw/2, y=oy+rr2*ch+ch/2;
+      const onPath=grid[rr2][c2]>=0;
+      let dir=onPath?grid[rr2][c2]:RI(0,3);
+      if(rr2===br&&c2===bc)dir=bad;
+      g.save();g.translate(x,y);g.rotate(dir*Math.PI/2);
+      const S2=Math.min(cw,ch)*0.30;
+      g.strokeStyle=onPath?"#ffd23f":"rgba(140,180,255,.42)";
+      g.lineWidth=onPath?6:4.5;g.lineCap="round";g.lineJoin="round";
+      if(onPath){g.shadowColor="#ffd23f";g.shadowBlur=12;}
+      g.beginPath();g.moveTo(-S2,0);g.lineTo(S2*0.45,0);g.stroke();
+      g.beginPath();g.moveTo(S2*0.05,-S2*0.42);g.lineTo(S2*0.62,0);g.lineTo(S2*0.05,S2*0.42);g.stroke();
+      g.restore();
+    }
+    /* จุดเริ่ม-จุดจบ */
+    g.fillStyle="#35e07a";g.beginPath();g.arc(ox+cw/2,oy+ch/2,13,0,TAU);g.fill();
+    g.fillStyle="#ff5c76";g.beginPath();g.arc(ox+(cols-1)*cw+cw/2,oy+(rows-1)*ch+ch/2,13,0,TAU);g.fill();
+    return {t:"เดินตามลูกศรสีทองจากจุดเขียวไปจุดแดง — หาช่องเดียวที่ลูกศรชี้ผิดจนหลุดเส้นทาง",
+      ans:ans(ox+bc*cw+cw/2, oy+br*ch+ch/2, Math.min(cw,ch)*0.42),c};
+  }},
+
+  /* X5 · กระจกสะท้อน: ครึ่งล่างต้องเป็นเงาสะท้อนของครึ่งบนเป๊ะ มีจุดเดียวที่ไม่ตรง */
+  {id:"mirrorflaw", make(d){
+    const {c,g}=base(d);
+    const cols=9, rows=4;
+    const cw=(W-120)/cols, ch=(H-170)/(rows*2), ox=60, oy=64;
+    const cells=[];
+    for(let r=0;r<rows;r++){cells.push([]);for(let cc=0;cc<cols;cc++)cells[r].push(RI(0,3));}
+    const br=RI(0,rows-1), bc=RI(0,cols-1);
+    let bad=cells[br][bc]; while(bad===cells[br][bc])bad=RI(0,3);
+    const SH=(g2,k,x,y,S2,col)=>{
+      g2.save();g2.translate(x,y);
+      g2.fillStyle=col;g2.strokeStyle=col;g2.lineWidth=4;
+      if(k===0){g2.beginPath();g2.arc(0,0,S2*0.5,0,TAU);g2.fill();}
+      else if(k===1){g2.fillRect(-S2*0.45,-S2*0.45,S2*0.9,S2*0.9);}
+      else if(k===2){g2.beginPath();g2.moveTo(0,-S2*0.52);g2.lineTo(S2*0.5,S2*0.4);
+        g2.lineTo(-S2*0.5,S2*0.4);g2.closePath();g2.fill();}
+      else{g2.beginPath();g2.moveTo(0,-S2*0.55);g2.lineTo(S2*0.45,0);g2.lineTo(0,S2*0.55);
+        g2.lineTo(-S2*0.45,0);g2.closePath();g2.fill();}
+      g2.restore();
+    };
+    const midY=oy+rows*ch;
+    for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
+      const x=ox+cc*cw+cw/2, S2=Math.min(cw,ch)*0.55;
+      SH(g,cells[r][cc],x,oy+r*ch+ch/2,S2,"#8fb6ff");
+      const k=(r===br&&cc===bc)?bad:cells[r][cc];
+      SH(g,k,x,midY+(rows-1-r)*ch+ch/2,S2,"#ffb0c0");
+    }
+    /* เส้นกระจก */
+    const mg=g.createLinearGradient(ox,0,ox+cols*cw,0);
+    mg.addColorStop(0,"rgba(255,210,63,0)");mg.addColorStop(.5,"rgba(255,210,63,.9)");
+    mg.addColorStop(1,"rgba(255,210,63,0)");
+    g.fillStyle=mg;g.fillRect(ox,midY-2,cols*cw,4);
+    g.fillStyle="#9db4dd";g.font="600 20px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("ครึ่งล่างคือเงาสะท้อนของครึ่งบน (พลิกบน-ล่าง)",W/2,H-28);
+    return {t:"ครึ่งล่างต้องเป็นภาพสะท้อนของครึ่งบนทุกช่อง — หาช่องเดียวที่สะท้อนไม่ตรงกัน",
+      ans:ans(ox+bc*cw+cw/2, midY+(rows-1-br)*ch+ch/2, Math.min(cw,ch)*0.48),c};
+  }},
+
+  /* X6 · นับซ้อนทับ: ตัวเลขบอกจำนวนวงที่ทับกันตรงนั้น มีป้ายเดียวที่นับผิด */
+  {id:"overlap", make(d){
+    const {c,g}=base(d);
+    const n=RI(7,9);
+    const circles=[];
+    for(let i=0;i<n;i++)circles.push({x:R(W*0.16,W*0.84),y:R(H*0.22,H*0.78),r:R(95,155)});
+    g.lineWidth=5;
+    circles.forEach((cc,i)=>{
+      g.strokeStyle="hsla("+(i*47%360)+",80%,68%,.85)";
+      g.fillStyle="hsla("+(i*47%360)+",80%,60%,.10)";
+      g.beginPath();g.arc(cc.x,cc.y,cc.r,0,TAU);g.fill();g.stroke();
+    });
+    /* จุดตรวจ 5 จุด พร้อมป้ายจำนวนวงที่คลุมจุดนั้น */
+    const pts=[];
+    for(let k=0;k<5;k++){
+      let best=null;
+      for(let tryi=0;tryi<80;tryi++){
+        const px=R(W*0.14,W*0.86), py=R(H*0.20,H*0.80);
+        const cnt=circles.filter(cc=>Math.hypot(px-cc.x,py-cc.y)<cc.r).length;
+        if(cnt<1)continue;
+        if(pts.some(q2=>Math.hypot(px-q2.x,py-q2.y)<150))continue;
+        best={x:px,y:py,cnt};break;
+      }
+      if(best)pts.push(best);
+    }
+    if(pts.length<3)return HARD[0].make(d);        // กันเคสวางจุดไม่ได้
+    const oi=RI(0,pts.length-1);
+    pts.forEach((pt,i)=>{
+      let show=pt.cnt;
+      if(i===oi){show=pt.cnt+P([-2,-1,1,2]);if(show<0)show=pt.cnt+2;}
+      g.fillStyle="#04070f";g.beginPath();g.arc(pt.x,pt.y,29,0,TAU);g.fill();
+      g.strokeStyle="#ffd23f";g.lineWidth=4;g.stroke();
+      g.fillStyle="#ffd23f";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText(String(show),pt.x,pt.y+1);
+    });
+    return {t:"ตัวเลขในวงกลมดำ = จำนวนวงสีที่คลุมจุดนั้นอยู่ — หาจุดเดียวที่นับผิด",
+      ans:ans(pts[oi].x,pts[oi].y,58),c};
+  }}
+  ];
+
   let BAG=[], BAGH=[];
   function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
   function draw1(pool,bagRef,avoid){
@@ -2888,7 +3135,8 @@ const QG = (()=>{
   function make(d, avoid){
     d=Math.max(0,Math.min(1,d==null?.6:d));
     const useHard = d>=0.30;
-    const o=useHard ? draw1(HARD,_bagH,avoid) : draw1(OBJ,_bagE,avoid);
+    const POOLH = HARD.concat(BRUTAL);
+    const o=useHard ? draw1(POOLH,_bagH,avoid) : draw1(OBJ,_bagE,avoid);
     const r=o.make(d);
     const stars = useHard ? (d<.55?"⭐⭐⭐":(d<.8?"⭐⭐⭐⭐":"⭐⭐⭐⭐⭐")) : (d<.18?"⭐":"⭐⭐");
     return {id:uid(), mode:o.id, hard:useHard,
@@ -2896,8 +3144,9 @@ const QG = (()=>{
       media:{type:"image",dataUrl:r.c.toDataURL("image/jpeg",0.92)},
       ans:r.ans};
   }
-  return {make, modes:OBJ.length+HARD.length, easyModes:OBJ.length, hardModes:HARD.length,
-    list:OBJ.map(o=>o.id).concat(HARD.map(o=>o.id))};
+  return {make, modes:OBJ.length+HARD.length+BRUTAL.length, easyModes:OBJ.length,
+    hardModes:HARD.length+BRUTAL.length,
+    list:OBJ.map(o=>o.id).concat(HARD.map(o=>o.id),BRUTAL.map(o=>o.id))};
 })();
 
 function genQuestion(seed){
@@ -4154,11 +4403,18 @@ function drawFiftyMask(g,map){
       if(horiz)g.fillRect(rx,ry+i*sl,rw,sl*0.5);
       else g.fillRect(rx+i*sl,ry,sl*0.5,rh);
     }
-    /* ลายวงจร: เส้นบาง + จุดโหนด */
-    g.strokeStyle="rgba(255,210,63,.085)";g.lineWidth=1.6;
+    /* ลายวงจร: เส้นทแยง + ตารางจุดละเอียด */
+    g.strokeStyle="rgba(255,210,63,.075)";g.lineWidth=1.6;
     for(let i=-h;i<w+h;i+=46){
       g.beginPath();g.moveTo(x0+i,y0);g.lineTo(x0+i-h,y0+h);g.stroke();
     }
+    g.fillStyle="rgba(140,190,255,.10)";
+    for(let yy=ry+9;yy<ry+rh;yy+=17)for(let xx=rx+9;xx<rx+rw;xx+=17)g.fillRect(xx,yy,1.6,1.6);
+    /* ขอบมืดรอบม่าน ให้ดูลึก */
+    const vg2=g.createRadialGradient(rx+rw/2,ry+rh/2,Math.min(rw,rh)*0.15,
+                                     rx+rw/2,ry+rh/2,Math.max(rw,rh)*0.75);
+    vg2.addColorStop(0,"rgba(0,0,0,0)");vg2.addColorStop(1,"rgba(0,0,0,.55)");
+    g.fillStyle=vg2;g.fillRect(rx,ry,rw,rh);
     g.fillStyle="rgba(255,210,63,.14)";
     for(let i=0;i<26;i++){
       const px=rx+((i*137)%Math.max(1,rw)), py=ry+((i*211)%Math.max(1,rh));
@@ -4204,20 +4460,32 @@ function drawFiftyMask(g,map){
     g.restore();
   }
 
-  /* ---------- ขอบรอยตัดถาวร: แกนขาว + เรืองทอง + ประกายวิ่ง ---------- */
+  /* ---------- ขอบรอยตัด: เส้นนิ่ง เรืองแสงหายใจ (ไม่มีแสงวิ่ง) ---------- */
   if(pShut>0.02){
     const L=horiz?[cutX,ry,cutX,ry+rh]:[rx,cutY,rx+rw,cutY];
+    const br=0.72+0.28*Math.sin(tt*1.6);
     g.save();
-    g.strokeStyle="rgba(255,190,60,.55)";g.shadowColor="#ffd23f";g.shadowBlur=30;g.lineWidth=9;
+    /* ชั้นเรืองทองกว้าง */
+    g.globalAlpha=0.42*br;
+    g.strokeStyle="#ffb52e";g.shadowColor="#ffb52e";g.shadowBlur=44;g.lineWidth=16;
     g.beginPath();g.moveTo(L[0],L[1]);g.lineTo(L[2],L[3]);g.stroke();
-    g.strokeStyle="#fff8dc";g.shadowBlur=14;g.lineWidth=2.6;
+    /* ชั้นทองเข้ม */
+    g.globalAlpha=0.9;
+    g.strokeStyle="rgba(255,196,70,.85)";g.shadowBlur=26;g.lineWidth=7;
     g.beginPath();g.moveTo(L[0],L[1]);g.lineTo(L[2],L[3]);g.stroke();
-    /* ประกายวิ่งไปตามรอยตัด */
-    const sp=((tt*0.5)%1);
-    const sx=L[0]+(L[2]-L[0])*sp, sy=L[1]+(L[3]-L[1])*sp;
-    const sg=g.createRadialGradient(sx,sy,0,sx,sy,34);
-    sg.addColorStop(0,"rgba(255,255,255,.85)");sg.addColorStop(1,"rgba(255,210,63,0)");
-    g.fillStyle=sg;g.beginPath();g.arc(sx,sy,34,0,Math.PI*2);g.fill();
+    /* แกนขาวคม */
+    g.globalAlpha=1;
+    g.strokeStyle="#fffdf2";g.shadowColor="#fff6cf";g.shadowBlur=12;g.lineWidth=2.4;
+    g.beginPath();g.moveTo(L[0],L[1]);g.lineTo(L[2],L[3]);g.stroke();
+    /* หมุดพลังงานประจำที่ตามแนวรอยตัด (นิ่ง แค่หายใจ) */
+    const len=horiz?rh:rw, nStud=Math.max(3,Math.round(len/96));
+    for(let i=0;i<=nStud;i++){
+      const q2=i/nStud;
+      const sx2=L[0]+(L[2]-L[0])*q2, sy2=L[1]+(L[3]-L[1])*q2;
+      const a2=0.30+0.30*Math.sin(tt*1.9+i*0.9);
+      g.globalAlpha=a2;g.fillStyle="#fff6cf";g.shadowBlur=16;
+      g.beginPath();g.arc(sx2,sy2,3.4,0,Math.PI*2);g.fill();
+    }
     g.restore();
   }
 
@@ -4390,46 +4658,115 @@ function podiumLedDraw(t){
   g.save();g.shadowColor=col;g.shadowBlur=10+8*pulse;
   g.strokeStyle=col;g.lineWidth=5;
   g.beginPath();g.arc(CX,CY,RAD-2,0,Math.PI*2);g.stroke();g.restore();
-  g.save();g.translate(0,54);          // เลื่อนเนื้อหาลงให้อยู่กลางวง
+  g.save();g.translate(0,50);          // เลื่อนเนื้อหาลงให้อยู่กลางวง
   g.textAlign="center";
-  g.save();g.shadowColor=col;g.shadowBlur=14;
-  g.fillStyle="#fff";g.font="900 36px PKNB,Kanit,sans-serif";g.fillText("ทีม "+t,W/2,46);
+
+  /* ---- หัวจอ: ชื่อทีม + เส้นคาดเรืองแสง ---- */
+  g.save();
+  const hg=g.createLinearGradient(W/2-90,0,W/2+90,0);
+  hg.addColorStop(0,"rgba("+colRgb+",0)");hg.addColorStop(.5,"rgba("+colRgb+",.45)");
+  hg.addColorStop(1,"rgba("+colRgb+",0)");
+  g.fillStyle=hg;g.fillRect(W/2-110,16,220,42);
+  g.shadowColor=col;g.shadowBlur=16;
+  g.fillStyle="#fff";g.font="900 38px PKNB,Kanit,sans-serif";
+  g.fillText("ทีม "+t,W/2,50);
   g.restore();
-  g.fillStyle="#8ea3c7";g.font="500 16px PKNB,Kanit,sans-serif";
-  g.fillText("• ตัวช่วยคงเหลือ •",W/2,70);
+  /* ขีดคาดใต้ชื่อ */
+  const ug=g.createLinearGradient(W/2-80,0,W/2+80,0);
+  ug.addColorStop(0,"rgba("+colRgb+",0)");ug.addColorStop(.5,col);ug.addColorStop(1,"rgba("+colRgb+",0)");
+  g.fillStyle=ug;g.fillRect(W/2-80,60,160,3);
+  g.fillStyle="rgba(160,190,235,.75)";g.font="700 13px PKNB,Kanit,sans-serif";
+  g.save();g.letterSpacing&&(g.letterSpacing="4px");
+  g.fillText("HELPER  MODULE",W/2,82);g.letterSpacing&&(g.letterSpacing="0px");g.restore();
+
   const hp=st?st.helpers[t]:{swap:1,fifty:1};
-  const items=[["🔄",hp.swap,"เปลี่ยนโจทย์"],["🌓",hp.fifty,"ตัด 50:50"]].filter(x=>x[1]>0);
-  if(items.length){
-    const slot=W/items.length;
-    items.forEach((ic,i)=>{
-      const cx2=slot*(i+.5),bob=Math.sin(tt*2.2+i*1.7)*3;
-      g.save();g.globalAlpha=.85;
-      const cardGr=g.createLinearGradient(0,96,0,196);
-      cardGr.addColorStop(0,"rgba("+colRgb+",.16)");cardGr.addColorStop(1,"rgba("+colRgb+",.04)");
-      g.fillStyle=cardGr;
-      roundRectPath(g,cx2-slot/2+10,96,slot-20,100,14);g.fill();
-      g.strokeStyle="rgba("+colRgb+",.55)";g.lineWidth=1.6;
-      roundRectPath(g,cx2-slot/2+10,96,slot-20,100,14);g.stroke();
-      g.restore();
-      g.font="46px serif";g.fillStyle="#fff";g.fillText(ic[0],cx2,140+bob);
-      g.fillStyle="#ffd23f";g.font="600 16px PKNB,Kanit,sans-serif";g.fillText(ic[2],cx2,172);
-      g.fillStyle="#fff";g.font="800 19px PKNB,Kanit,sans-serif";g.fillText("×"+ic[1],cx2,198);
-    });
-  }else{
-    g.fillStyle="#41598f";g.font="600 24px PKNB,Kanit,sans-serif";
-    g.fillText("ใช้ตัวช่วยครบแล้ว",W/2,150);
-  }
-  if(P.led.fx){                                  // เอฟเฟกต์ตอนใช้: ไอคอนหมุนขยายสลาย + สปาร์ก
-    const p=(performance.now()-P.led.fx.t0)/950;
+  const items=[["swap",hp.swap,"เปลี่ยนโจทย์"],["fifty",hp.fifty,"ตัด 50:50"]];
+  const slot=W/items.length;
+  items.forEach((ic,i)=>{
+    const cx2=slot*(i+.5), left=cx2-slot/2+12, cardW=slot-24, cardY=98, cardH=112;
+    const alive=ic[1]>0;
+    const bob=alive?Math.sin(tt*2.0+i*1.7)*2.4:0;
+    /* การ์ดกระจก */
+    g.save();
+    const cardGr=g.createLinearGradient(0,cardY,0,cardY+cardH);
+    if(alive){cardGr.addColorStop(0,"rgba("+colRgb+",.22)");cardGr.addColorStop(1,"rgba("+colRgb+",.05)");}
+    else{cardGr.addColorStop(0,"rgba(90,105,140,.10)");cardGr.addColorStop(1,"rgba(90,105,140,.03)");}
+    g.fillStyle=cardGr;roundRectPath(g,left,cardY,cardW,cardH,16);g.fill();
+    g.strokeStyle=alive?"rgba("+colRgb+",.6)":"rgba(120,140,180,.25)";
+    g.lineWidth=1.8;roundRectPath(g,left,cardY,cardW,cardH,16);g.stroke();
+    if(alive){    /* ไฟวิ่งบนขอบการ์ด */
+      g.save();g.globalAlpha=.30+.30*Math.sin(tt*2.6+i);
+      g.strokeStyle="#fff";g.lineWidth=1.2;
+      roundRectPath(g,left+2,cardY+2,cardW-4,cardH-4,14);g.stroke();g.restore();
+    }
+    g.restore();
+    /* มุมกรอบ HUD */
+    g.save();g.strokeStyle=alive?col:"rgba(120,140,180,.35)";g.lineWidth=2.4;g.lineCap="round";
+    const cb=11, cxs=[left+7,left+cardW-7], cys=[cardY+7,cardY+cardH-7];
+    cxs.forEach((xx,ix)=>cys.forEach((yy,iy)=>{
+      const sx=ix?-1:1, sy=iy?-1:1;
+      g.beginPath();g.moveTo(xx+sx*cb,yy);g.lineTo(xx,yy);g.lineTo(xx,yy+sy*cb);g.stroke();
+    }));
+    g.restore();
+    /* ไอคอนเวกเตอร์ */
+    g.save();g.globalAlpha=alive?1:.28;
+    drawHelpIcon(g,ic[0],cx2,cardY+40+bob,46,alive?"#ffe27a":"#7d8aa8");
+    g.restore();
+    /* ชื่อ + จำนวน */
+    g.fillStyle=alive?"#ffd23f":"#5b6a90";
+    g.font="700 15px PKNB,Kanit,sans-serif";g.fillText(ic[2],cx2,cardY+78);
+    if(alive){
+      g.save();g.shadowColor=col;g.shadowBlur=10;
+      g.fillStyle="#fff";g.font="800 18px PKNB,Kanit,sans-serif";
+      g.fillText("พร้อมใช้ ×"+ic[1],cx2,cardY+100);g.restore();
+    }else{
+      g.fillStyle="#4b5878";g.font="700 16px PKNB,Kanit,sans-serif";
+      g.fillText("ใช้ไปแล้ว",cx2,cardY+100);
+      /* ขีดฆ่า */
+      g.strokeStyle="rgba(255,92,118,.5)";g.lineWidth=2.4;
+      g.beginPath();g.moveTo(left+14,cardY+cardH/2-14);g.lineTo(left+cardW-14,cardY+cardH/2+14);g.stroke();
+    }
+  });
+
+  if(P.led.fx){    /* ⚡ เอฟเฟกต์ตอนใช้ตัวช่วย: ไอคอนพุ่งขึ้น + วงคลื่น + ประกาย */
+    const p=(performance.now()-P.led.fx.t0)/1500;
     if(p>=1)P.led.fx=null;
     else{
-      g.save();g.translate(W/2,120);g.rotate(p*7);
-      g.globalAlpha=1-p;const s2=1+p*1.7;g.scale(s2,s2);
-      g.font="60px serif";g.fillText(P.led.fx.icon,0,20);g.restore();g.globalAlpha=1;
-      for(let i=0;i<8;i++){
-        const a=i*.785+p*5,rr=28+p*135;
-        g.fillStyle="rgba(255,210,63,"+(1-p).toFixed(2)+")";
-        g.beginPath();g.arc(W/2+Math.cos(a)*rr,120+Math.sin(a)*rr,4,0,Math.PI*2);g.fill();
+      const kind=P.led.fx.kind||"swap";
+      const e=1-Math.pow(1-Math.min(1,p/0.45),3);
+      g.save();g.translate(W/2,116);
+      /* วงคลื่นสองชั้น */
+      for(let k=0;k<2;k++){
+        const q2=Math.min(1,Math.max(0,(p-k*0.14)/0.6));
+        if(q2<=0||q2>=1)continue;
+        g.save();g.globalAlpha=(1-q2)*0.85;
+        g.strokeStyle=k?"#fff":col;g.lineWidth=7*(1-q2)+1.5;
+        g.shadowColor=k?"#fff":col;g.shadowBlur=26;
+        g.beginPath();g.arc(0,0,26+q2*150,0,Math.PI*2);g.stroke();g.restore();
+      }
+      /* ไอคอนขยาย-หมุน-จาง */
+      const fade=Math.max(0,1-Math.max(0,(p-0.35))/0.65);
+      g.save();g.globalAlpha=fade;
+      g.rotate((kind==="swap"?1:0.35)*p*5.2);
+      const sc=(0.6+e*0.9)*(1+p*0.7);
+      drawHelpIcon(g,kind,0,0,64*sc,"#fff6cf");
+      g.restore();
+      /* ประกายกระจาย */
+      for(let i=0;i<12;i++){
+        const a2=i*0.5236+p*2.4, rr2=30+p*165, q3=Math.max(0,1-p*1.25);
+        g.globalAlpha=q3;g.fillStyle=i%2?"#ffd23f":"#fff";
+        g.beginPath();g.arc(Math.cos(a2)*rr2,Math.sin(a2)*rr2,3.4*q3+1,0,Math.PI*2);g.fill();
+      }
+      g.globalAlpha=1;g.restore();
+      /* แถบข้อความ */
+      if(p<0.8){
+        const ta=Math.min(1,p/0.15)*Math.max(0,1-(p-0.55)/0.25);
+        g.save();g.globalAlpha=ta;
+        g.fillStyle="rgba(4,7,20,.82)";roundRectPath(g,W/2-108,222,216,42,12);g.fill();
+        g.strokeStyle=col;g.lineWidth=2;roundRectPath(g,W/2-108,222,216,42,12);g.stroke();
+        g.fillStyle="#fff";g.font="800 19px PKNB,Kanit,sans-serif";
+        g.fillText(kind==="swap"?"เปลี่ยนโจทย์!":"ตัด 50:50!",W/2,250);
+        g.restore();
       }
     }
   }
@@ -4495,9 +4832,12 @@ function roundRectPath(g,x,y,w,h,r){
   g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);
   g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();
 }
-function podiumHelperFx(t,icon){
+function podiumHelperFx(t,kind){
   const P=G3.podiums&&G3.podiums[t];if(!P)return;
-  P.led.fx={icon,t0:performance.now()};Sfx.pop();
+  P.led.fx={kind,t0:performance.now()};
+  P.btnPress=performance.now();                 // ปุ่มแดงยุบตามไปด้วย
+  if(P.led)P.led.flash=performance.now();
+  try{Sfx.pop();Sfx.tone(660,.18,"triangle",.10,240);}catch(e){}
 }
 /* 💰 เรียกตอน MC กดเปิดเงินรางวัล: โชว์ยอดเงินเท่ๆ บนจอ LED หน้าแท่นแปปนึงแล้วค่อย fade ออก */
 function podiumMoneyFx(t,amount){
@@ -5195,18 +5535,25 @@ function animate(t){
       if(p.btnMesh&&p.btnBaseY!=null){
         let dy=0,sqz=1;
         if(p.btnPress){
-          const pp=(now()-p.btnPress)/300;
+          const pp=(performance.now()-p.btnPress)/460;      // ★ หน่วยเดียวกับตอนตั้งค่า
           if(pp>=1){p.btnPress=null;}
-          else if(pp<0.32){                         // กดลงเร็ว
-            const s=pp/0.32; dy=-0.22*s; sqz=1+0.28*s;
+          else if(pp<0.26){                         // ทุบลงเร็ว ๆ
+            const s=pp/0.26; const e=1-Math.pow(1-s,3);
+            dy=-0.34*e; sqz=1+0.42*e;
           }else{                                     // เด้งกลับพร้อมสปริง
-            const s=(pp-0.32)/0.68; const spring=Math.sin(s*Math.PI*2.2)*(1-s);
-            dy=-0.22*(1-s)+spring*0.05; sqz=1+0.28*(1-s);
+            const s=(pp-0.26)/0.74;
+            const spring=Math.sin(s*Math.PI*3.1)*(1-s)*(1-s);
+            dy=-0.34*(1-s)+spring*0.10; sqz=1+0.42*(1-s)-spring*0.16;
           }
         }
         p.btnMesh.position.y=p.btnBaseY+dy;
         p.btnMesh.scale.set(1+(sqz-1)*.6,1/sqz,1+(sqz-1)*.6);   // กดแบน (squash) ตอนยุบ
-        p.btn.emissiveIntensity+= p.btnPress?1.4:0;
+        if(p.btnPress){
+          const pp=Math.min(1,(performance.now()-p.btnPress)/460);
+          p.btn.emissiveIntensity+=2.6*(1-pp);                       // สว่างวาบตอนกด
+          if(p.btnRing)p.btnRing.material.opacity=Math.min(1,.5+.5*(1-pp));
+          if(p.podRing)p.podRing.opacity=Math.min(1,.4+.6*(1-pp));
+        }
       }
       p.under.intensity=active?(1.5+.6*Math.sin(tm*5)):.55+.25*Math.sin(tm*1.8+i2*2.4);
       podiumLedDraw(t2);
@@ -6296,10 +6643,47 @@ function autoJoinFromURL(){
   },900);
 }
 
+/* ---------------- 🎨 ไอคอนตัวช่วยแบบเวกเตอร์ (วาดบนแคนวาส) ---------------- */
+function drawHelpIcon(g,kind,cx,cy,S,col){
+  g.save();g.translate(cx,cy);g.lineCap="round";g.lineJoin="round";
+  if(kind==="swap"){
+    /* วงกลมลูกศรหมุน 2 หัว */
+    g.strokeStyle=col;g.lineWidth=S*0.13;g.shadowColor=col;g.shadowBlur=S*0.35;
+    g.beginPath();g.arc(0,0,S*0.42,-2.5,0.95);g.stroke();
+    g.beginPath();g.arc(0,0,S*0.42,Math.PI-2.5,Math.PI+0.95);g.stroke();
+    const head=(ang,dir)=>{
+      const x=Math.cos(ang)*S*0.42,y=Math.sin(ang)*S*0.42;
+      g.save();g.translate(x,y);g.rotate(ang+(dir>0?1.6:-1.6));
+      g.beginPath();g.moveTo(0,-S*0.20);g.lineTo(S*0.21,0);g.lineTo(0,S*0.20);
+      g.closePath();g.fillStyle=col;g.fill();g.restore();
+    };
+    head(0.95,1);head(Math.PI+0.95,1);
+  }else if(kind==="fifty"){
+    /* วงกลมครึ่งมืดครึ่งสว่าง + รอยผ่า */
+    g.beginPath();g.arc(0,0,S*0.44,-Math.PI/2,Math.PI/2);
+    g.fillStyle=col;g.shadowColor=col;g.shadowBlur=S*0.35;g.fill();
+    g.shadowBlur=0;
+    g.beginPath();g.arc(0,0,S*0.44,Math.PI/2,-Math.PI/2);
+    g.fillStyle="rgba(255,255,255,.10)";g.fill();
+    g.beginPath();g.arc(0,0,S*0.44,0,Math.PI*2);
+    g.strokeStyle=col;g.lineWidth=S*0.09;g.stroke();
+    /* ใบมีดผ่ากลาง */
+    g.strokeStyle="#fff8dc";g.lineWidth=S*0.075;g.shadowColor="#fff";g.shadowBlur=S*0.3;
+    g.beginPath();g.moveTo(0,-S*0.60);g.lineTo(0,S*0.60);g.stroke();
+  }else{
+    /* ยกมือ = ขอเป็นคนเล่น */
+    g.strokeStyle=col;g.lineWidth=S*0.12;g.shadowColor=col;g.shadowBlur=S*0.3;
+    g.beginPath();g.arc(0,-S*0.22,S*0.16,0,Math.PI*2);g.stroke();
+    g.beginPath();g.moveTo(0,-S*0.04);g.lineTo(0,S*0.30);g.stroke();
+    g.beginPath();g.moveTo(-S*0.26,S*0.42);g.lineTo(0,S*0.16);g.lineTo(S*0.26,S*0.42);g.stroke();
+  }
+  g.restore();
+}
+
 function podiumBtnPress(t){
   const P=G3.podiums&&G3.podiums[t];if(!P||!P.btnMesh)return;
   if(window.Sfx)Sfx.pop();
-  P.btnPress=performance.now();
+  P.btnPress=performance.now();          // ★ ใช้ performance.now() ให้ตรงกับตอนอ่าน
   if(P.led)P.led.flash=performance.now();     // ⚡ แฟลชบนจอ LED ของแท่นที่กด
 }
 function doEmoteSend(){}
@@ -6633,12 +7017,8 @@ function refreshHUD(){
     _uiSeen.fiftyTs=rd.fifty.ts;
     G3.fiftyAnim=now();
     App.localFlags.camReveal=true;
-    G3.shake=Math.max(G3.shake||0,.42);                    // สะเทือนตอนใบมีดผ่า
-    try{
-      Sfx.whoosh();
-      Sfx.tone(1250,.16,"square",.07,420);                 // เสียงใบมีด
-      setTimeout(()=>{try{Sfx.tone(180,.55,"sawtooth",.09,90);}catch(e){}},170);  // ม่านปิด
-    }catch(e){}
+    G3.shake=Math.max(G3.shake||0,.46);                    // สะเทือนตอนใบมีดผ่า
+    try{ Sfx.timeup(); }catch(e){}                         // ★ เสียงเดียวกับตอนหมดเวลา
     if(App.role==="player")toast("🌓 ตัด 50:50 — ครึ่งจอที่มืดลงไม่มีคำตอบ","#ffd23f");
   }
   if(rd&&!rd.fifty)_uiSeen.fiftyTs=0;
@@ -6658,8 +7038,8 @@ function refreshHUD(){
     const hp=st.helpers[t2];
     if(P.led.prev==null){P.led.prev={...hp};podiumLedDraw(t2);}
     else if(P.led.prev.swap!==hp.swap||P.led.prev.fifty!==hp.fifty){
-      const icon=P.led.prev.swap!==hp.swap?"🔄":"🌓";
-      P.led.prev={...hp};podiumHelperFx(t2,icon);
+      const kind=P.led.prev.swap!==hp.swap?"swap":"fifty";
+      P.led.prev={...hp};podiumHelperFx(t2,kind);
     }
   });
   drawMcScreen();
