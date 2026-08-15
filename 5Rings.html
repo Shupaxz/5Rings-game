@@ -6469,8 +6469,22 @@ function frameColorNow(){
   const t=1-f;
   return {r:Math.round(255+(255-255)*t), g:Math.round(210+(59-210)*t), b:Math.round(63+(92-63)*t)};
 }
+function toRGB(col){
+  const GOLD={r:255,g:210,b:63};
+  if(!col)return GOLD;
+  if(typeof col==="string"){
+    const m=/^#?([0-9a-f]{6})$/i.exec(col.trim());
+    if(m){const v=parseInt(m[1],16);return {r:(v>>16)&255,g:(v>>8)&255,b:v&255};}
+    const m2=/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(col);
+    if(m2)return {r:+m2[1],g:+m2[2],b:+m2[3]};
+    return GOLD;
+  }
+  const r=Number(col.r),g2=Number(col.g),b=Number(col.b);
+  if(!isFinite(r)||!isFinite(g2)||!isFinite(b))return GOLD;
+  return {r,g:g2,b};
+}
 function drawMediaFrame(g,x,y,w,h,col){
-  const rgb=col||{r:255,g:210,b:63};
+  const rgb=toRGB(col);
   const C=`rgb(${rgb.r},${rgb.g},${rgb.b})`;
   const now2=performance.now();
   const r=20;                                    // มุมโค้ง
@@ -6518,9 +6532,11 @@ function drawMediaFrame(g,x,y,w,h,col){
   g.restore();
 }
 function shade(rgb,f){
-  const r=Math.max(0,Math.min(255,Math.round(rgb.r*f)));
-  const gg=Math.max(0,Math.min(255,Math.round(rgb.g*f)));
-  const b=Math.max(0,Math.min(255,Math.round(rgb.b*f)));
+  const c=(rgb&&isFinite(rgb.r)&&isFinite(rgb.g)&&isFinite(rgb.b))?rgb:{r:255,g:210,b:63};
+  const k=isFinite(f)?f:1;
+  const r=Math.max(0,Math.min(255,Math.round(c.r*k)))||0;
+  const gg=Math.max(0,Math.min(255,Math.round(c.g*k)))||0;
+  const b=Math.max(0,Math.min(255,Math.round(c.b*k)))||0;
   return `rgb(${r},${gg},${b})`;
 }
 function drawLiveRings(g,map){
@@ -8762,7 +8778,7 @@ function runClipReveal(rd){
       const sc=(S*0.98)/Math.hypot(w,h);
       const ox=(S-w*sc)/2, oy=(S-h*sc)/2;
       g.drawImage(src2,ox,oy,w*sc,h*sc);
-      drawMediaFrame(g,ox,oy,w*sc,h*sc,ok?"#35e07a":"#ff3b5c");
+      drawMediaFrame(g,ox,oy,w*sc,h*sc,ok?{r:53,g:224,b:122}:{r:255,g:59,b:92});
       map={ox,oy,s:sc,w};
     }
     /* วงของผู้เล่น: เขียวถ้าถูก แดงถ้าผิด */
