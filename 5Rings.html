@@ -1549,6 +1549,7 @@ textarea.inp{resize:vertical;min-height:64px}
       <div class="mc-grid">
         <button class="btn gold sm" id="mcSteal" disabled>⚡ เปิดให้อีกทีม STEAL (20 วิ)</button>
         <button class="btn green sm" id="mcRevealPos" disabled>📡 เฉลยตำแหน่ง (Radar)</button>
+        <button class="btn sm" id="mcClipReveal" style="background:linear-gradient(180deg,#a97bff,#5b2bd6);color:#fff;font-weight:800" disabled>🎬 เปิดคลิปเฉลย</button>
         <button class="btn green sm" id="mcShowAnsB">🎯 เฉลยจุดที่ถูกต้อง</button>
         <button class="btn danger sm" id="mcFlourB">💥 ระเบิดแป้ง</button>
         <button class="btn blue sm" id="mcNext">⏭ ไปข้อถัดไป</button>
@@ -1858,6 +1859,24 @@ const Sfx={ctx:null, _buf:{}, _loaded:false,
     if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);
     g.gain.setValueAtTime(v||.16,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
     o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+d+.03);}catch(e){}},
+  suspIv:null,
+  /* 🎵 เสียงลุ้นเบา ๆ ระหว่างเปิดคลิปเฉลย: โน้ตต่ำเต้นตุบ ๆ ไล่สูงขึ้นช้า ๆ */
+  suspenseStart(ms){
+    this.init();this.suspenseStop();
+    let i=0;const steps=Math.max(4,Math.round((ms||4200)/380));
+    this.suspIv=setInterval(()=>{
+      const f=138*Math.pow(1.045,i);
+      this.tone(f,.34,"triangle",.045);                 // เบามาก ~1/4 ของเสียงปกติ
+      if(i%2===0)this.tone(f*2.01,.16,"sine",.022);
+      if(++i>=steps)this.suspenseStop();
+    },380);
+  },
+  suspenseStop(){if(this.suspIv){clearInterval(this.suspIv);this.suspIv=null;}},
+  suspenseHit(ok){
+    this.suspenseStop();
+    if(ok){[660,880,1174].forEach((f,i)=>setTimeout(()=>this.tone(f,.42,"triangle",.12),i*90));}
+    else{this.tone(210,.5,"sawtooth",.10,-70);setTimeout(()=>this.tone(150,.6,"sawtooth",.09,-50),140);}
+  },
   radarIv:null,
   radarStart(){this.init();this.radarStop();let i=0;
     this.radarIv=setInterval(()=>{this.tone(720+(i++%4)*170,.12,"sine",.11);},240);},
@@ -7761,7 +7780,7 @@ function tickPit(dt){
 const RKEY=pin=>"r5:room:"+pin, QKEY=pin=>"r5:q:"+pin, PKEY=(pin,pid)=>"r5:p:"+pin+":"+pid;
 function freshRound(team){return {no:0,final:false,team,qid:null,ring:null,fifty:null,heat:null,
   mediaOpen:false,qOpen:false,timer:{running:false,end:0,dur:30,kind:"main"},
-  placement:null,stealPlacement:null,phase:"idle",result:null,revealTs:0,stealTeam:null,done:false,flash:null,resultApplied:false};}
+  placement:null,stealPlacement:null,phase:"idle",result:null,revealTs:0,clip:null,stealTeam:null,done:false,flash:null,resultApplied:false};}
 function freshState(){return {phase:"lobby",lights:{on:true,color:"#ff9a2a",intensity:1},fx:"sweep",
   scores:{A:0,B:0},scoreVisible:{A:false,B:false},released:{A:false,B:false},firstTeam:null,
   usedQ:[],qCount:{A:0,B:0},helpers:{A:{swap:1,fifty:1},B:{swap:1,fifty:1}},
@@ -7891,6 +7910,21 @@ const MC={
     else if(rd.phase==="stealJudged")rd.phase="stealReveal";
     else return;
     rd.revealTs=now();
+    this.mark();
+  },
+  /* 🎬 เปิดคลิปเฉลย — ใช้แทนเรดาร์กับโจทย์ที่ต้อง "ดูซ้ำ" ถึงจะเข้าใจ */
+  doClipReveal(){
+    const st=App.room.state, rd=st.round;
+    const q=questionById(rd.qid); if(!q)return;
+    const pl=rd.stealPlacement||rd.placement;
+    let correct=false;
+    if(pl&&q.ans)correct=Math.hypot(pl.x-q.ans.x,pl.y-q.ans.y)<=pl.r+q.ans.r;
+    rd.clip={ts:now(),correct,steal:!!rd.stealPlacement};
+    /* ให้เฟสเดินต่อเหมือนกดเรดาร์ เพื่อให้คิดคะแนนได้ตามปกติ */
+    if(rd.phase==="judged")rd.phase="reveal";
+    else if(rd.phase==="stealJudged")rd.phase="stealReveal";
+    rd.revealTs=rd.revealTs||now();
+    this.notice(correct?"🎬 เปิดคลิปเฉลย — ตอบถูก!":"🎬 เปิดคลิปเฉลย — ตอบผิด");
     this.mark();
   },
   applyFoul(){
@@ -8423,7 +8457,11 @@ function refreshHUD(){
   if(st.banner&&st.banner.ts>_uiSeen.banner){_uiSeen.banner=st.banner.ts;showBanner(st.banner);}
   if(st.notice&&st.notice.ts>_uiSeen.notice){_uiSeen.notice=st.notice.ts;toast(st.notice.msg);}
   // reveal watch (radar)
-  if(rd&&(rd.phase==="reveal"||rd.phase==="stealReveal")&&rd.revealTs>_uiSeen.reveal){
+  if(rd&&rd.clip&&rd.clip.ts>(_uiSeen.clip||0)){
+    _uiSeen.clip=rd.clip.ts;_uiSeen.reveal=Math.max(_uiSeen.reveal,rd.revealTs||0);
+    runClipReveal(rd);
+  }
+  else if(rd&&(rd.phase==="reveal"||rd.phase==="stealReveal")&&rd.revealTs>_uiSeen.reveal){
     _uiSeen.reveal=rd.revealTs;runRevealShow(rd);}
   // 🔢 ตัวเลขข้อ 3D กลางจอ (โชว์ตอนเริ่มข้อใหม่ ยกเว้นรอบ FINAL ที่มีป้ายของตัวเองแล้ว)
   if(rd&&rd.qNumTs&&rd.qNumTs>(_uiSeen.qNum||0)){
@@ -8684,6 +8722,89 @@ function useRevealClip(q){
   _screenVideoEl.play().catch(()=>{});
   G3.screenState="videomedia";
   return true;
+}
+/* 🎬 เปิดคลิปเฉลย: ตอบถูก → เล่นคลิปเฉลย + วงเขียว · ตอบผิด → เล่นคลิปโจทย์ + วงแดง */
+function runClipReveal(rd){
+  const q=questionById(rd.qid); if(!q)return;
+  const info=rd.clip||{};
+  const ok=!!info.correct;
+  const pl=(info.steal?rd.stealPlacement:rd.placement)||rd.stealPlacement||rd.placement;
+  App.localFlags.camReveal=true;
+  G3.scanning=true;
+  const src=(ok&&q.reveal&&q.reveal.dataUrl)?q.reveal.dataUrl:q.media.dataUrl;
+  const isVid=(ok&&q.reveal)?true:(q.media.type==="video");
+  let img=null,imgReady=false,vid=null;
+  if(isVid){
+    if(!_screenVideoEl){_screenVideoEl=document.createElement("video");
+      _screenVideoEl.muted=true;_screenVideoEl.playsInline=true;}
+    vid=_screenVideoEl;
+    vid.loop=false;delete vid.dataset.rv;
+    vid.src=src;try{vid.currentTime=0;}catch(e){}
+    vid.play().catch(()=>{});
+  }else{
+    img=new Image();img.onload=()=>imgReady=true;img.src=src;
+  }
+  try{Sfx.whoosh();Sfx.suspenseStart(4300);}catch(e){}
+  const g=G3.screenCtx,S=1024,C=512;
+  const t0=performance.now(), DUR=4600;
+  let hit=false;
+  (function frame(){
+    const el=performance.now()-t0;
+    const p=Math.min(1,el/DUR);
+    const gr=g.createRadialGradient(C,C,60,C,C,520);
+    gr.addColorStop(0,"#0c1540");gr.addColorStop(1,"#05081e");
+    g.fillStyle=gr;g.fillRect(0,0,S,S);
+    const src2=(img&&imgReady)?img:(vid&&vid.readyState>=2?vid:null);
+    let map=null;
+    if(src2){
+      const w=src2.videoWidth||src2.naturalWidth||src2.width,
+            h=src2.videoHeight||src2.naturalHeight||src2.height;
+      const sc=(S*0.98)/Math.hypot(w,h);
+      const ox=(S-w*sc)/2, oy=(S-h*sc)/2;
+      g.drawImage(src2,ox,oy,w*sc,h*sc);
+      drawMediaFrame(g,ox,oy,w*sc,h*sc,ok?"#35e07a":"#ff3b5c");
+      map={ox,oy,s:sc,w};
+    }
+    /* วงของผู้เล่น: เขียวถ้าถูก แดงถ้าผิด */
+    if(pl&&map){
+      const x=map.ox+pl.x*map.w*map.s, y=map.oy+pl.y*map.w*map.s, r=pl.r*map.w*map.s;
+      const col=ok?"#35e07a":"#ff3b5c";
+      const pulse=1+0.06*Math.sin(el*0.006);
+      g.save();
+      g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=34;g.lineWidth=11;
+      g.beginPath();g.arc(x,y,r*pulse,0,Math.PI*2);g.stroke();
+      g.globalAlpha=.30+.25*Math.sin(el*0.005);
+      g.lineWidth=26;g.beginPath();g.arc(x,y,r*pulse,0,Math.PI*2);g.stroke();
+      g.restore();
+      /* วงคลื่นตอนจบ */
+      if(p>0.72){
+        const q2=(p-0.72)/0.28;
+        g.save();g.globalAlpha=(1-q2)*0.8;
+        g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=30;g.lineWidth=8*(1-q2)+2;
+        g.beginPath();g.arc(x,y,r+q2*300,0,Math.PI*2);g.stroke();g.restore();
+      }
+    }
+    /* ป้ายผล */
+    if(p>0.70){
+      const a=Math.min(1,(p-0.70)/0.16);
+      g.save();g.globalAlpha=a;g.textAlign="center";g.textBaseline="middle";
+      g.font="900 92px PKNB,Kanit,sans-serif";
+      g.fillStyle="rgba(0,0,0,.8)";g.fillText(ok?"ถูกต้อง!":"ยังไม่ใช่",C+4,S-118);
+      g.fillStyle=ok?"#35e07a":"#ff5c76";
+      g.shadowColor=g.fillStyle;g.shadowBlur=30;
+      g.fillText(ok?"ถูกต้อง!":"ยังไม่ใช่",C,S-122);
+      g.restore();
+      if(!hit){hit=true;try{Sfx.suspenseHit(ok);}catch(e){}}
+    }
+    G3.screenTex.needsUpdate=true;
+    if(p<1)requestAnimationFrame(frame);
+    else{
+      try{Sfx.suspenseStop();}catch(e){}
+      G3.scanning=false;
+      if(vid){vid.loop=true;vid.src=q.media.dataUrl;vid.play().catch(()=>{});}
+      G3.screenState=null;
+    }
+  })();
 }
 function runRevealShow(rd){
   const q=questionById(rd.qid);if(!q)return;
@@ -9090,6 +9211,23 @@ $("#mcRevealPos").onclick=()=>{
     MC.doRevealShow();
   }else{toast("ยังไม่พร้อมเฉลย");}
 };
+$("#mcClipReveal").onclick=()=>{
+  const rd=ST().round;
+  const q=questionById(rd.qid);
+  if(!q){toast("ยังไม่มีโจทย์");return;}
+  MC.collectVotes();
+  if(rd.phase==="play"||rd.phase==="timeup"){
+    if(!rd.placement)toast("⚠️ ยังไม่มีวงแหวนที่ยืนยัน — ถือว่าตอบผิด","#ff8fa3");
+    MC.applyReveal(false);
+    MC.doClipReveal();
+  }else if(rd.phase==="steal"||rd.phase==="stealWait"){
+    if(!rd.stealPlacement)toast("⚠️ ทีมสตีลยังไม่วางวงแหวน — ถือว่าสตีลไม่สำเร็จ","#ff8fa3");
+    MC.applyReveal(true);
+    MC.doClipReveal();
+  }else if(rd.phase==="judged"||rd.phase==="stealJudged"||rd.phase==="reveal"||rd.phase==="stealReveal"){
+    MC.doClipReveal();                     // ตัดสินไปแล้ว → เปิดคลิปซ้ำได้เรื่อย ๆ
+  }else{toast("ยังไม่พร้อมเฉลย");}
+};
 $("#mcFoul").onclick=()=>MC.applyFoul();
 $("#mcShowAnsB").onclick=()=>{const rd=ST().round;
   if(!rd.qid||!rd.mediaOpen){toast("เปิดรูปโจทย์ก่อนนะ");return;}
@@ -9159,6 +9297,16 @@ function refreshMCPanel(){
   $("#mcTimer").disabled=!rd.qOpen||rd.timer.running||rd.done||["judged","stealJudged","reveal","stealReveal","steal"].includes(rd.phase);
   $("#mcSteal").disabled=!(rd.result==="wrong"&&!rd.final&&(rd.phase==="reveal"||rd.phase==="judged"));
   $("#mcRevealPos").disabled=!["play","timeup","steal","stealWait","judged","stealJudged"].includes(rd.phase)||rd.phase==="reveal"||rd.phase==="stealReveal";
+  (function(){
+    const b=$("#mcClipReveal");if(!b)return;
+    const q=rd.qid?questionById(rd.qid):null;
+    const usable=!!q&&rd.mediaOpen&&
+      ["play","timeup","steal","stealWait","judged","stealJudged","reveal","stealReveal"].includes(rd.phase);
+    b.disabled=!usable;
+    b.textContent=(q&&q.reveal)?"🎬 เปิดคลิปเฉลย ★":"🎬 เปิดคลิปเฉลย";
+    b.title=(q&&q.reveal)?"โจทย์นี้มีคลิปเฉลยแยก — ตอบถูกจะได้ดูคลิปเฉลย":
+      "โจทย์นี้ไม่มีคลิปเฉลยแยก จะรีเพลย์โจทย์เดิมพร้อมวงผล";
+  })();
   $("#helpStatA").textContent="A: เปลี่ยนโจทย์ ×"+st.helpers.A.swap+" · 50:50 ×"+(st.helpers.A.fifty||0);
   $("#helpStatB").textContent="B: เปลี่ยนโจทย์ ×"+st.helpers.B.swap+" · 50:50 ×"+(st.helpers.B.fifty||0);
   /* lobby chips */
