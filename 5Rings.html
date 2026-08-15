@@ -4232,30 +4232,91 @@ function drawFiftyMask(g,map){
     g.restore();
   }
 
-  /* ---------- ป้าย 50:50 ---------- */
+  /* ---------- ป้าย 50:50 แบบ 3D ---------- */
   if(pLabel>0&&rw>40&&rh>40){
     const lx=rx+rw/2, ly=ry+rh/2;
-    const pop=1+0.14*Math.pow(1-pLabel,2);
-    const breathe=1+0.02*Math.sin(tt*2.0);
-    g.save();g.globalAlpha=pLabel;
-    g.translate(lx,ly);g.scale(pop*breathe,pop*breathe);
-    g.textAlign="center";g.textBaseline="middle";
-    /* วงแหวนบาง ๆ รอบป้าย */
-    g.strokeStyle="rgba(255,210,63,.35)";g.lineWidth=2;
-    g.beginPath();g.arc(0,-4,74,0,Math.PI*2);g.stroke();
-    g.setLineDash([9,13]);g.strokeStyle="rgba(255,210,63,.55)";
-    g.save();g.rotate(tt*0.5);g.beginPath();g.arc(0,-4,88,0,Math.PI*2);g.stroke();g.restore();
-    g.setLineDash([]);
-    /* ตัวเลขสลักทอง */
-    g.font="900 62px Kanit,PKNB,sans-serif";
-    g.fillStyle="rgba(0,0,0,.85)";g.fillText("50:50",0,-1);
-    const tg=g.createLinearGradient(0,-34,0,26);
-    tg.addColorStop(0,"#fff9d8");tg.addColorStop(.5,"#ffd23f");tg.addColorStop(1,"#c9820a");
-    g.fillStyle=tg;g.shadowColor="rgba(255,190,60,.7)";g.shadowBlur=22;
-    g.fillText("50:50",0,-4);
-    g.shadowBlur=0;
-    g.font="700 19px Kanit,PKNB,sans-serif";g.fillStyle="rgba(190,205,235,.9)";
-    g.fillText("ครึ่งนี้ไม่มีคำตอบ",0,40);
+    const e2=t=>1-Math.pow(1-Math.max(0,Math.min(1,t)),4);
+    const pFly =e2(pLabel/0.68);            // สองก้อนพุ่งเข้าหากัน
+    const pHit =Math.max(0,Math.min(1,(pLabel-0.60)/0.40));  // จังหวะชน
+    const FS=Math.min(92, Math.min(rw,rh)*0.42);
+    const gapX=FS*0.92;                     // ระยะจากกลางถึงกึ่งกลางก้อน "50"
+    const yaw=Math.sin(tt*0.85)*0.16;       // ส่ายซ้ายขวาเบา ๆ ให้ดูเป็น 3D
+    const bob=Math.sin(tt*1.5)*3;
+
+    /* วาดตัวหนังสือหนา 3 มิติ: ชั้นความลึก → หน้าไล่เฉดทอง → ขอบสว่าง */
+    const solid=(txt,cx2,cy2,size,depth,alpha,squash)=>{
+      g.save();g.globalAlpha=alpha;
+      g.translate(cx2,cy2);
+      g.transform(1,0,yaw*0.30,1,0,0);                 // เอียงแบบ shear = มุมมอง 3D
+      g.scale(squash||1,1);
+      g.textAlign="center";g.textBaseline="middle";
+      g.font="900 "+size+"px Kanit,PKNB,sans-serif";
+      /* เงาตกพื้น */
+      g.save();g.globalAlpha=alpha*0.45;g.fillStyle="rgba(0,0,0,.85)";
+      g.filter="none";g.fillText(txt,depth*0.55,depth*0.9);g.restore();
+      /* ความลึก */
+      for(let i=depth;i>=1;i--){
+        const t2=i/depth;
+        const R=Math.round(46+70*(1-t2)), G2=Math.round(26+46*(1-t2)), B=2;
+        g.fillStyle="rgb("+R+","+G2+","+B+")";
+        g.fillText(txt,i*0.62,i*0.62);
+      }
+      /* หน้าไล่เฉดทอง */
+      const fg2=g.createLinearGradient(0,-size*0.55,0,size*0.55);
+      fg2.addColorStop(0,"#fffdf0");fg2.addColorStop(.34,"#ffe27a");
+      fg2.addColorStop(.62,"#ffc02e");fg2.addColorStop(1,"#c9820a");
+      g.fillStyle=fg2;g.shadowColor="rgba(255,190,60,.75)";g.shadowBlur=26;
+      g.fillText(txt,0,0);g.shadowBlur=0;
+      /* ขอบบางสว่าง */
+      g.lineWidth=1.6;g.strokeStyle="rgba(255,252,225,.85)";g.strokeText(txt,0,0);
+      /* แสงกวาดผ่านผิวตัวอักษร */
+      g.save();
+      const swx=((tt*0.42)%1.6-0.3)*size*2.4;
+      g.beginPath();g.rect(-size*1.6,-size*0.62,size*3.2,size*1.24);g.clip();
+      const sg2=g.createLinearGradient(swx-size*0.30,0,swx+size*0.30,0);
+      sg2.addColorStop(0,"rgba(255,255,255,0)");
+      sg2.addColorStop(.5,"rgba(255,255,255,.55)");
+      sg2.addColorStop(1,"rgba(255,255,255,0)");
+      g.fillStyle=sg2;g.fillText(txt,0,0);
+      g.restore();
+      g.restore();
+    };
+
+    g.save();
+    g.translate(lx,ly+bob);
+    /* วงแหวนประดับหมุนสวนทาง */
+    g.save();g.globalAlpha=pHit*0.9;
+    g.strokeStyle="rgba(255,210,63,.30)";g.lineWidth=2;
+    g.beginPath();g.arc(0,0,FS*1.15,0,Math.PI*2);g.stroke();
+    g.setLineDash([10,16]);g.strokeStyle="rgba(255,210,63,.5)";
+    g.save();g.rotate(tt*0.45);g.beginPath();g.arc(0,0,FS*1.34,0,Math.PI*2);g.stroke();g.restore();
+    g.setLineDash([5,11]);g.strokeStyle="rgba(120,190,255,.35)";
+    g.save();g.rotate(-tt*0.3);g.beginPath();g.arc(0,0,FS*1.52,0,Math.PI*2);g.stroke();g.restore();
+    g.setLineDash([]);g.restore();
+
+    /* คลื่นกระแทกตอนสองก้อนชนกัน */
+    if(pHit>0&&pHit<1){
+      g.save();g.globalAlpha=(1-pHit)*0.85;
+      g.strokeStyle="#fff6cf";g.lineWidth=8*(1-pHit)+1.5;
+      g.shadowColor="#ffd23f";g.shadowBlur=30;
+      g.beginPath();g.arc(0,0,FS*0.35+pHit*FS*1.9,0,Math.PI*2);g.stroke();
+      g.restore();
+    }
+
+    const over=(1-pFly)*(1-pFly);
+    const dep=Math.max(3,Math.round(FS*0.13));
+    /* ก้อนซ้าย "50" พุ่งมาจากซ้าย · ก้อนขวาพุ่งมาจากขวา */
+    solid("50", -gapX-(1-pFly)*FS*4.2, 0, FS, dep, Math.min(1,pLabel*2), 1+over*0.5);
+    solid("50",  gapX+(1-pFly)*FS*4.2, 0, FS, dep, Math.min(1,pLabel*2), 1+over*0.5);
+    /* ":" โผล่ตอนชน พร้อมกระพริบ */
+    if(pHit>0){
+      const cp=1+2.2*Math.pow(1-pHit,2);
+      solid(":", 0, -FS*0.04, FS*cp, dep, pHit, 1);
+      g.save();g.globalAlpha=(1-pHit)*0.9;
+      const fl=g.createRadialGradient(0,0,0,0,0,FS*1.1);
+      fl.addColorStop(0,"rgba(255,255,255,.75)");fl.addColorStop(1,"rgba(255,210,63,0)");
+      g.fillStyle=fl;g.beginPath();g.arc(0,0,FS*1.1,0,Math.PI*2);g.fill();g.restore();
+    }
     g.restore();
   }
 }
@@ -5899,18 +5960,40 @@ const MC={
     await Net.set(RKEY(App.pin),{pin:App.pin,state:App.room.state,live:this.buildLive()});},
   banner(kind,text,sub){App.room.state.banner={kind,text,sub,ts:now()};this.mark();},
   notice(msg){App.room.state.notice={msg,ts:now()};this.mark();},
+  /* จองข้อไว้ทันที: ข้อไหนเคยถูกหยิบขึ้นจอแล้ว จะไม่มีวันกลับมาอีก */
+  useQ(id){
+    const st=App.room.state;
+    if(id&&!st.usedQ.includes(id))st.usedQ.push(id);
+    return id;
+  },
+  /* คลังหมด → ปั๊มโจทย์ใหม่สด ๆ ให้เลย (ไม่มีทางซ้ำ เพราะสร้างใหม่ทุกใบ) */
+  freshQuestion(){
+    try{
+      const st=App.room.state;
+      const last=(App.room.questions[App.room.questions.length-1]||{}).mode||null;
+      const d=Math.min(1,0.45+st.usedQ.length*0.04);
+      const q=QG.make(d,last);
+      q.text="ข้อสำรอง · "+q.text;
+      App.room.questions.push(q);
+      try{Net.set("r5:q:"+App.pin+":"+q.id,q);}catch(e){}
+      return q.id;
+    }catch(e){return null;}
+  },
   pickQuestion(excludeId){
     const st=App.room.state;
     const cur=excludeId||(st.round&&st.round.qid)||null;
-    let pool=App.room.questions.filter(q=>!st.usedQ.includes(q.id)&&q.id!==cur);
-    if(!pool.length)pool=App.room.questions.filter(q=>!st.usedQ.includes(q.id));
-    if(!pool.length){toast("โจทย์หมดแล้ว!","#ff8fa3");return null;}
-    return pool[Math.floor(Math.random()*pool.length)].id;
+    const finalId=(App.room.finalQ&&App.room.finalQ.id)||null;
+    const pool=App.room.questions.filter(q=>
+      q&&q.media&&!st.usedQ.includes(q.id)&&q.id!==cur&&q.id!==finalId);
+    if(pool.length)return this.useQ(pool[Math.floor(Math.random()*pool.length)].id);
+    const nid=this.freshQuestion();      // คลังหมดแล้ว — สร้างข้อใหม่แทนการวนซ้ำ
+    if(nid){toast("⚙️ คลังโจทย์หมด — สร้างข้อใหม่อัตโนมัติให้แล้ว","#ffd23f");return this.useQ(nid);}
+    toast("สร้างโจทย์ใหม่ไม่สำเร็จ","#ff8fa3");return null;
   },
   startRoundFor(team){
     const st=App.room.state;
     st.round=freshRound(team);
-    st.round.qid=this.pickQuestion();
+    st.round.qid=this.pickQuestion();     // pickQuestion จองข้อให้แล้วในตัว
     st.round.phase="idle";
     st.round.no=st.qCount[team]+1;   // นับข้อแยกตามทีม: ข้อ 1 ทีม A · ข้อ 1 ทีม B · ... · ข้อ 5 ทีม B
     st.round.qNumTs=now();
@@ -6008,8 +6091,10 @@ const MC={
       if(a.type==="helper"){
         const h=st.helpers[team];
         if(a.data.kind==="swap"&&h.swap>0&&rd.qid&&!rd.done&&!rd.final){
+          this.useQ(rd.qid);                       // ข้อเดิม = ใช้แล้ว ห้ามกลับมาอีก
           const nid=this.pickQuestion(rd.qid);
-          if(nid){st.usedQ.push(rd.qid);rd.qid=nid;h.swap--;rd.fifty=null;rd.heat=null;
+          if(!nid)this.notice("⚠️ เปลี่ยนโจทย์ไม่สำเร็จ ลองอีกครั้ง");
+          if(nid){rd.qid=nid;h.swap--;rd.fifty=null;rd.heat=null;
             rd.swapTs=now();                     // ธง: เปลี่ยนโจทย์ด้วยตัวช่วย → เล่นสุ่มตัวอักษร
             if(rd.mediaOpen){const nq=questionById(nid);
               if(nq)Net.set("r5:cur:"+App.pin,nq);
