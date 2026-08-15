@@ -2494,10 +2494,21 @@ const QG = (()=>{
   }}
   ];
 
+  let BAG=[];
+  function draw1(avoid){
+    if(!BAG.length){                              // เติมถุงใหม่แบบสับไพ่
+      BAG=OBJ.slice();
+      for(let i=BAG.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+        [BAG[i],BAG[j]]=[BAG[j],BAG[i]];}
+      if(avoid&&BAG[0].id===avoid&&BAG.length>1){[BAG[0],BAG[1]]=[BAG[1],BAG[0]];}
+    }
+    let idx=0;
+    if(avoid&&BAG[0].id===avoid&&BAG.length>1)idx=1;
+    return BAG.splice(idx,1)[0];
+  }
   function make(d, avoid){
     d=Math.max(0,Math.min(1,d==null?.6:d));
-    let pool=OBJ; if(avoid)pool=OBJ.filter(o=>o.id!==avoid);
-    const o=P(pool.length?pool:OBJ);
+    const o=draw1(avoid);
     const r=o.make(d);
     return {id:uid(), mode:o.id,
       text:r.t+"  ·  ระดับ "+(d<.34?"⭐":d<.67?"⭐⭐":"⭐⭐⭐"),
@@ -3720,36 +3731,148 @@ function drawFiftyMask(g,map){
   const f=G3.fifty; if(!f||!map)return;
   const w=(G3._mediaImg?G3._mediaImg.width:map.w)*map.s;
   const h=(G3._mediaImg?G3._mediaImg.height:(map.w*0.636))*map.s;
-  const x0=map.ox,y0=map.oy;
+  const x0=map.ox,y0=map.oy,tt=performance.now()*0.001;
+  const horiz=(f.side==="L"||f.side==="R");
+  /* เส้นผ่า: กลางภาพเสมอ */
+  const cutX=x0+w/2, cutY=y0+h/2;
+
   let p=1;
-  if(G3.fiftyAnim){const el=now()-G3.fiftyAnim;p=Math.min(1,el/620);}
-  const e=1-Math.pow(1-p,3);
-  let rx=x0,ry=y0,rw=w,rh=h;
-  if(f.side==="L"){rw=w/2*e;}
-  else if(f.side==="R"){rw=w/2*e;rx=x0+w-rw;}
-  else if(f.side==="T"){rh=h/2*e;}
-  else {rh=h/2*e;ry=y0+h-rh;}
-  g.save();
-  g.fillStyle="rgba(3,5,14,.93)";g.fillRect(rx,ry,rw,rh);
-  /* ลายทแยงบนม่าน */
-  g.beginPath();g.rect(rx,ry,rw,rh);g.clip();
-  g.strokeStyle="rgba(255,210,63,.10)";g.lineWidth=3;
-  for(let i=-h;i<w+h;i+=34){g.beginPath();g.moveTo(x0+i,y0);g.lineTo(x0+i-h,y0+h);g.stroke();}
-  g.restore();
-  /* ขอบเรืองแสงตรงรอยตัด */
-  g.save();g.strokeStyle="#ffd23f";g.shadowColor="#ffd23f";g.shadowBlur=26;g.lineWidth=5;
-  g.beginPath();
-  if(f.side==="L"){g.moveTo(rx+rw,ry);g.lineTo(rx+rw,ry+rh);}
-  else if(f.side==="R"){g.moveTo(rx,ry);g.lineTo(rx,ry+rh);}
-  else if(f.side==="T"){g.moveTo(rx,ry+rh);g.lineTo(rx+rw,ry+rh);}
-  else {g.moveTo(rx,ry);g.lineTo(rx+rw,ry);}
-  g.stroke();g.restore();
-  if(p>0.55){
-    g.save();g.globalAlpha=Math.min(1,(p-0.55)/0.45);
-    g.fillStyle="#ffd23f";g.font="900 44px Kanit,PKNB,sans-serif";
+  if(G3.fiftyAnim){const el=now()-G3.fiftyAnim;p=Math.min(1,el/1150);}
+  const ease=t=>1-Math.pow(1-Math.max(0,Math.min(1,t)),3);
+  const pBlade =Math.min(1,p/0.30);            // ใบมีดวิ่งผ่า
+  const pShut  =ease((p-0.22)/0.55);           // ม่านบานเกล็ดปิด
+  const pLabel =Math.min(1,Math.max(0,(p-0.62)/0.38));
+
+  /* ---------- กรอบพื้นที่ที่ถูกดับ ---------- */
+  const halfW=w/2, halfH=h/2;
+  let rx,ry,rw,rh;
+  if(f.side==="L"){rx=cutX-halfW*pShut; ry=y0; rw=halfW*pShut; rh=h;}
+  else if(f.side==="R"){rx=cutX; ry=y0; rw=halfW*pShut; rh=h;}
+  else if(f.side==="T"){rx=x0; ry=cutY-halfH*pShut; rw=w; rh=halfH*pShut;}
+  else {rx=x0; ry=cutY; rw=w; rh=halfH*pShut;}
+
+  if(rw>1&&rh>1){
+    g.save();
+    g.beginPath();g.rect(rx,ry,rw,rh);g.clip();
+    /* กระจกดำ + ไล่เฉดจากรอยตัด */
+    const gg=horiz
+      ? g.createLinearGradient(f.side==="L"?cutX:cutX, 0, f.side==="L"?rx:rx+rw, 0)
+      : g.createLinearGradient(0, f.side==="T"?cutY:cutY, 0, f.side==="T"?ry:ry+rh);
+    gg.addColorStop(0,"rgba(8,12,30,.90)");
+    gg.addColorStop(.35,"rgba(4,6,18,.965)");
+    gg.addColorStop(1,"rgba(2,3,10,.985)");
+    g.fillStyle=gg;g.fillRect(rx,ry,rw,rh);
+
+    /* บานเกล็ด: แถบบาง ๆ ปิดไล่กัน เห็นเป็นจังหวะ */
+    const n=14, sl=(horiz?rh:rw)/n;
+    for(let i=0;i<n;i++){
+      const d=Math.max(0,Math.min(1,(pShut*1.5)-(i%2?0.06:0)-i*0.012));
+      g.fillStyle="rgba(120,170,255,"+(0.05*(1-d)).toFixed(3)+")";
+      if(horiz)g.fillRect(rx,ry+i*sl,rw,sl*0.5);
+      else g.fillRect(rx+i*sl,ry,sl*0.5,rh);
+    }
+    /* ลายวงจร: เส้นบาง + จุดโหนด */
+    g.strokeStyle="rgba(255,210,63,.085)";g.lineWidth=1.6;
+    for(let i=-h;i<w+h;i+=46){
+      g.beginPath();g.moveTo(x0+i,y0);g.lineTo(x0+i-h,y0+h);g.stroke();
+    }
+    g.fillStyle="rgba(255,210,63,.14)";
+    for(let i=0;i<26;i++){
+      const px=rx+((i*137)%Math.max(1,rw)), py=ry+((i*211)%Math.max(1,rh));
+      const tw=0.4+0.6*Math.sin(tt*1.6+i);
+      g.globalAlpha=0.18*tw;g.beginPath();g.arc(px,py,2.4,0,Math.PI*2);g.fill();
+    }
+    g.globalAlpha=1;
+    /* ประกายไหลออกจากรอยตัด */
+    const flowT=(tt*0.35)%1;
+    const fg=horiz?g.createLinearGradient(cutX,0,f.side==="L"?rx:rx+rw,0)
+                  :g.createLinearGradient(0,cutY,0,f.side==="T"?ry:ry+rh);
+    fg.addColorStop(Math.max(0,flowT-0.12),"rgba(255,210,63,0)");
+    fg.addColorStop(flowT,"rgba(255,210,63,.09)");
+    fg.addColorStop(Math.min(1,flowT+0.12),"rgba(255,210,63,0)");
+    g.fillStyle=fg;g.fillRect(rx,ry,rw,rh);
+    g.restore();
+  }
+
+  /* ---------- ใบมีดผ่ากลางจอ ---------- */
+  const bladeLen=(horiz?h:w);
+  const bp=ease(pBlade);
+  if(pBlade<1||p<1){
+    g.save();
+    const seg=bladeLen*bp;
+    const grd=horiz?g.createLinearGradient(0,cutY-seg/2,0,cutY+seg/2)
+                   :g.createLinearGradient(cutX-seg/2,0,cutX+seg/2,0);
+    grd.addColorStop(0,"rgba(255,255,255,0)");
+    grd.addColorStop(.5,"rgba(255,255,255,1)");
+    grd.addColorStop(1,"rgba(255,255,255,0)");
+    g.strokeStyle=grd;g.shadowColor="#ffd23f";g.shadowBlur=38;g.lineWidth=7*(1-p*0.5)+3;
+    g.beginPath();
+    if(horiz){g.moveTo(cutX,cutY-seg/2);g.lineTo(cutX,cutY+seg/2);}
+    else{g.moveTo(cutX-seg/2,cutY);g.lineTo(cutX+seg/2,cutY);}
+    g.stroke();
+    /* หัวใบมีดสองข้าง */
+    if(pBlade<1){
+      for(const dir of [-1,1]){
+        const hx=horiz?cutX:cutX+dir*seg/2, hy=horiz?cutY+dir*seg/2:cutY;
+        g.fillStyle="rgba(255,255,255,.95)";g.shadowBlur=30;
+        g.beginPath();g.arc(hx,hy,7,0,Math.PI*2);g.fill();
+      }
+    }
+    g.restore();
+  }
+
+  /* ---------- ขอบรอยตัดถาวร: แกนขาว + เรืองทอง + ประกายวิ่ง ---------- */
+  if(pShut>0.02){
+    const L=horiz?[cutX,ry,cutX,ry+rh]:[rx,cutY,rx+rw,cutY];
+    g.save();
+    g.strokeStyle="rgba(255,190,60,.55)";g.shadowColor="#ffd23f";g.shadowBlur=30;g.lineWidth=9;
+    g.beginPath();g.moveTo(L[0],L[1]);g.lineTo(L[2],L[3]);g.stroke();
+    g.strokeStyle="#fff8dc";g.shadowBlur=14;g.lineWidth=2.6;
+    g.beginPath();g.moveTo(L[0],L[1]);g.lineTo(L[2],L[3]);g.stroke();
+    /* ประกายวิ่งไปตามรอยตัด */
+    const sp=((tt*0.5)%1);
+    const sx=L[0]+(L[2]-L[0])*sp, sy=L[1]+(L[3]-L[1])*sp;
+    const sg=g.createRadialGradient(sx,sy,0,sx,sy,34);
+    sg.addColorStop(0,"rgba(255,255,255,.85)");sg.addColorStop(1,"rgba(255,210,63,0)");
+    g.fillStyle=sg;g.beginPath();g.arc(sx,sy,34,0,Math.PI*2);g.fill();
+    g.restore();
+  }
+
+  /* ---------- คลื่นกระแทกตอนผ่า ---------- */
+  if(p<0.62){
+    const wp=Math.min(1,p/0.62);
+    g.save();g.globalAlpha=(1-wp)*0.75;
+    g.strokeStyle="#ffd23f";g.lineWidth=6*(1-wp)+1;
+    g.shadowColor="#ffd23f";g.shadowBlur=24;
+    const rr=Math.max(w,h)*0.10+wp*Math.max(w,h)*0.62;
+    g.beginPath();g.ellipse(cutX,cutY,rr,rr*(horiz?1:0.62),0,0,Math.PI*2);g.stroke();
+    g.restore();
+  }
+
+  /* ---------- ป้าย 50:50 ---------- */
+  if(pLabel>0&&rw>40&&rh>40){
+    const lx=rx+rw/2, ly=ry+rh/2;
+    const pop=1+0.14*Math.pow(1-pLabel,2);
+    const breathe=1+0.02*Math.sin(tt*2.0);
+    g.save();g.globalAlpha=pLabel;
+    g.translate(lx,ly);g.scale(pop*breathe,pop*breathe);
     g.textAlign="center";g.textBaseline="middle";
-    g.shadowColor="rgba(0,0,0,.9)";g.shadowBlur=14;
-    g.fillText("50:50",rx+rw/2,ry+rh/2);
+    /* วงแหวนบาง ๆ รอบป้าย */
+    g.strokeStyle="rgba(255,210,63,.35)";g.lineWidth=2;
+    g.beginPath();g.arc(0,-4,74,0,Math.PI*2);g.stroke();
+    g.setLineDash([9,13]);g.strokeStyle="rgba(255,210,63,.55)";
+    g.save();g.rotate(tt*0.5);g.beginPath();g.arc(0,-4,88,0,Math.PI*2);g.stroke();g.restore();
+    g.setLineDash([]);
+    /* ตัวเลขสลักทอง */
+    g.font="900 62px Kanit,PKNB,sans-serif";
+    g.fillStyle="rgba(0,0,0,.85)";g.fillText("50:50",0,-1);
+    const tg=g.createLinearGradient(0,-34,0,26);
+    tg.addColorStop(0,"#fff9d8");tg.addColorStop(.5,"#ffd23f");tg.addColorStop(1,"#c9820a");
+    g.fillStyle=tg;g.shadowColor="rgba(255,190,60,.7)";g.shadowBlur=22;
+    g.fillText("50:50",0,-4);
+    g.shadowBlur=0;
+    g.font="700 19px Kanit,PKNB,sans-serif";g.fillStyle="rgba(190,205,235,.9)";
+    g.fillText("ครึ่งนี้ไม่มีคำตอบ",0,40);
     g.restore();
   }
 }
@@ -3831,7 +3954,7 @@ function podiumLedDraw(t){
   g.fillStyle="#8ea3c7";g.font="500 16px PKNB,Kanit,sans-serif";
   g.fillText("• ตัวช่วยคงเหลือ •",W/2,70);
   const hp=st?st.helpers[t]:{swap:1,fifty:1};
-  const items=[["🔄",hp.swap,"เปลี่ยนโจทย์"],["⭕",hp.big,"วง +10%"]].filter(x=>x[1]>0);
+  const items=[["🔄",hp.swap,"เปลี่ยนโจทย์"],["🌓",hp.fifty,"ตัด 50:50"]].filter(x=>x[1]>0);
   if(items.length){
     const slot=W/items.length;
     items.forEach((ic,i)=>{
@@ -5363,7 +5486,7 @@ function freshState(){return {phase:"lobby",lights:{on:true,color:"#ff9a2a",inte
   usedQ:[],qCount:{A:0,B:0},helpers:{A:{swap:1,fifty:1},B:{swap:1,fifty:1}},
   activePlayer:{A:null,B:null},round:freshRound(null),
   teamNames:{A:"ทีม A",B:"ทีม B"},mcName:"MC",roster:[],
-  intro:null,rulesOn:false,banner:null,notice:null,mcAct:null,pit:null,final:null,grand:null,endShow:null,rev:0};}
+  intro:null,rulesOn:false,banner:null,notice:null,pit:null,final:null,grand:null,endShow:null,rev:0};}
 function questionById(id){
   if(!App.room)return null;
   if(App.room.finalQ&&App.room.finalQ.id===id)return App.room.finalQ;
@@ -5393,16 +5516,11 @@ const MC={
     await Net.set(RKEY(App.pin),{pin:App.pin,state:App.room.state,live:this.buildLive()});},
   banner(kind,text,sub){App.room.state.banner={kind,text,sub,ts:now()};this.mark();},
   notice(msg){App.room.state.notice={msg,ts:now()};this.mark();},
-  /* 📢 ประกาศให้ทุกคนเห็นว่าพิธีกรกดปุ่มอะไร */
-  act(label,kind){
-    const st=App.room&&App.room.state;if(!st||!label)return;
-    if(st.mcAct&&st.mcAct.label===label&&now()-st.mcAct.ts<500)return;   // กันกดรัว
-    st.mcAct={label:String(label).slice(0,48),kind:kind||"",ts:now()};
-    this.mark();
-  },
-  pickQuestion(){
+  pickQuestion(excludeId){
     const st=App.room.state;
-    const pool=App.room.questions.filter(q=>!st.usedQ.includes(q.id));
+    const cur=excludeId||(st.round&&st.round.qid)||null;
+    let pool=App.room.questions.filter(q=>!st.usedQ.includes(q.id)&&q.id!==cur);
+    if(!pool.length)pool=App.room.questions.filter(q=>!st.usedQ.includes(q.id));
     if(!pool.length){toast("โจทย์หมดแล้ว!","#ff8fa3");return null;}
     return pool[Math.floor(Math.random()*pool.length)].id;
   },
@@ -5507,7 +5625,7 @@ const MC={
       if(a.type==="helper"){
         const h=st.helpers[team];
         if(a.data.kind==="swap"&&h.swap>0&&rd.qid&&!rd.done&&!rd.final){
-          const nid=this.pickQuestion();
+          const nid=this.pickQuestion(rd.qid);
           if(nid){st.usedQ.push(rd.qid);rd.qid=nid;h.swap--;rd.fifty=null;rd.heat=null;
             rd.swapTs=now();                     // ธง: เปลี่ยนโจทย์ด้วยตัวช่วย → เล่นสุ่มตัวอักษร
             if(rd.mediaOpen){const nq=questionById(nid);
@@ -5720,54 +5838,6 @@ function doEmoteSend(){}
 // hook emote into Player key
 const _oldDoEmote=doEmote;
 doEmote=function(n){Player.lastEmote={k:n,ts:now()};_oldDoEmote(n);};
-
-/* ---------------- 📢 ถ่ายทอดการกดปุ่มของพิธีกร ---------------- */
-const MC_SILENT=["✕ ปิดแผง","📱 MC PANEL"];
-document.addEventListener("click",e=>{
-  try{
-    if(App.role!=="mc"||!App.room)return;
-    const t=e.target; if(!t||!t.closest)return;
-    if(!t.closest("#mcpanel"))return;
-    const b=t.closest("button"); if(!b||b.disabled)return;
-    if(b.classList.contains("mc-tab"))return;                 // สลับแท็บ = ไม่ต้องประกาศ
-    const label=(b.textContent||"").replace(/\s+/g," ").trim();
-    if(!label||MC_SILENT.includes(label))return;
-    MC.act(label);
-  }catch(err){}
-},true);
-
-/* ป้ายประกาศบนจอผู้เล่น */
-function showMcAct(label){
-  let box=document.getElementById("mcactBox");
-  if(!box){
-    box=document.createElement("div");
-    box.id="mcactBox";
-    box.style.cssText="position:fixed;left:50%;top:74px;transform:translateX(-50%);z-index:88;"
-      +"display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;"
-      +"font-family:PKNB,Kanit,sans-serif";
-    document.body.appendChild(box);
-  }
-  const d=document.createElement("div");
-  d.style.cssText="display:flex;align-items:center;gap:10px;padding:11px 20px 12px;border-radius:99px;"
-    +"background:linear-gradient(180deg,rgba(18,28,66,.97),rgba(6,10,26,.98));"
-    +"border:1px solid rgba(255,210,63,.6);color:#eaf2ff;font-weight:800;font-size:15px;"
-    +"box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 34px rgba(255,210,63,.22);"
-    +"animation:mcActIn .42s cubic-bezier(.2,1.5,.35,1) both";
-  d.innerHTML='<span style="font-size:12px;letter-spacing:.24em;color:#ffd23f;font-weight:800">พิธีกร</span>'
-    +'<span style="width:1px;height:16px;background:rgba(255,210,63,.45)"></span>'
-    +'<span>'+label.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))+'</span>';
-  box.appendChild(d);
-  while(box.children.length>3)box.removeChild(box.firstChild);
-  setTimeout(()=>{d.style.animation="mcActOut .38s ease-in both";
-    setTimeout(()=>d.remove(),400);},2600);
-}
-(function(){
-  const st=document.createElement("style");
-  st.textContent="@keyframes mcActIn{from{opacity:0;transform:translateY(-16px) scale(.9);filter:blur(4px)}"
-    +"to{opacity:1;transform:none;filter:none}}"
-    +"@keyframes mcActOut{to{opacity:0;transform:translateY(-12px) scale(.96)}}";
-  document.head.appendChild(st);
-})();
 
 /* ---------------- 🗳 ผู้ชมโหวตทาย ---------------- */
 const Spec={
@@ -6010,12 +6080,6 @@ function refreshHUD(){
   // banner
   if(st.banner&&st.banner.ts>_uiSeen.banner){_uiSeen.banner=st.banner.ts;showBanner(st.banner);}
   if(st.notice&&st.notice.ts>_uiSeen.notice){_uiSeen.notice=st.notice.ts;toast(st.notice.msg);}
-  if(st.mcAct&&st.mcAct.ts>(_uiSeen.mcAct||0)){
-    const fresh=now()-st.mcAct.ts<8000;      // เพิ่งเข้าห้อง = ไม่ต้องเด้งของเก่าย้อนหลัง
-    _uiSeen.mcAct=st.mcAct.ts;
-    if(fresh)showMcAct(st.mcAct.label);
-    if(fresh&&App.role!=="mc"){try{Sfx.pop&&Sfx.pop();}catch(e){}}
-  }
   // reveal watch (radar)
   if(rd&&(rd.phase==="reveal"||rd.phase==="stealReveal")&&rd.revealTs>_uiSeen.reveal){
     _uiSeen.reveal=rd.revealTs;runRevealShow(rd);}
@@ -6101,7 +6165,12 @@ function refreshHUD(){
     _uiSeen.fiftyTs=rd.fifty.ts;
     G3.fiftyAnim=now();
     App.localFlags.camReveal=true;
-    try{Sfx.whoosh();Sfx.tone(300,.8,"sawtooth",.10,180);}catch(e){}
+    G3.shake=Math.max(G3.shake||0,.42);                    // สะเทือนตอนใบมีดผ่า
+    try{
+      Sfx.whoosh();
+      Sfx.tone(1250,.16,"square",.07,420);                 // เสียงใบมีด
+      setTimeout(()=>{try{Sfx.tone(180,.55,"sawtooth",.09,90);}catch(e){}},170);  // ม่านปิด
+    }catch(e){}
     if(App.role==="player")toast("🌓 ตัด 50:50 — ครึ่งจอที่มืดลงไม่มีคำตอบ","#ffd23f");
   }
   if(rd&&!rd.fifty)_uiSeen.fiftyTs=0;
