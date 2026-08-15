@@ -1141,7 +1141,7 @@ textarea.inp{resize:vertical;min-height:64px}
     <div class="ed-head">
       <h2>🎬 สร้างคำถามรายการ</h2>
       <button class="btn ghost sm" id="edGen">⚙️ Gen 24 ข้อ (ยาก)</button>
-      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 6 ข้อ</button>
+      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 8 ข้อ</button>
       <button class="btn ghost sm" id="edSave">💾 บันทึกชุดโจทย์</button>
       <button class="btn ghost sm" id="edLoad">📂 โหลดชุดโจทย์</button>
       <input type="file" id="edFile" accept=".json,application/json" hidden>
@@ -2520,49 +2520,49 @@ const QG = (()=>{
   /* H1 · ตารางลาติน: ทุกแถว/หลักต้องมี 1–6 ครบ ไม่ซ้ำ */
   {id:"sudoku", make(d){
     const {c,g}=base(d);
-    const N=6;
-    const perm=[1,2,3,4,5,6];
+    const N=9;
+    const perm=[1,2,3,4,5,6,7,8,9];
     for(let i=N-1;i>0;i--){const j=RI(0,i);[perm[i],perm[j]]=[perm[j],perm[i]];}
-    const shift=[0,1,2,3,4,5];
+    const shift=[0,1,2,3,4,5,6,7,8];
     for(let i=N-1;i>0;i--){const j=RI(0,i);[shift[i],shift[j]]=[shift[j],shift[i]];}
     const L=[];
     for(let r=0;r<N;r++){L.push([]);for(let cc=0;cc<N;cc++)L[r].push(perm[(cc+shift[r])%N]);}
     const br=RI(0,N-1), bc=RI(0,N-1), oldv=L[br][bc];
     let nv=oldv; while(nv===oldv)nv=RI(1,N);
     L[br][bc]=nv;
-    const cw=88, ch=88, ox=W/2-N*cw/2, oy=H/2-N*ch/2+8;
+    const cw=62, ch=62, ox=W/2-N*cw/2, oy=H/2-N*ch/2+8;
     g.textAlign="center";g.textBaseline="middle";
     for(let r=0;r<N;r++)for(let cc=0;cc<N;cc++){
       const x=ox+cc*cw, y=oy+r*ch;
       g.fillStyle=(r+cc)%2?"rgba(22,32,74,.65)":"rgba(14,22,54,.65)";
       g.fillRect(x,y,cw,ch);
       g.strokeStyle="rgba(140,180,255,.28)";g.lineWidth=1.6;g.strokeRect(x,y,cw,ch);
-      g.fillStyle="#eaf3ff";g.font="700 40px Kanit,sans-serif";
+      g.fillStyle="#eaf3ff";g.font="700 30px Kanit,sans-serif";
       g.fillText(String(L[r][cc]),x+cw/2,y+ch/2+2);
     }
     g.strokeStyle="rgba(255,210,63,.55)";g.lineWidth=4;g.strokeRect(ox,oy,N*cw,N*ch);
-    return {t:"ทุกแถวและทุกหลักต้องมีเลข 1–6 ครบ ห้ามซ้ำ — หาช่องเดียวที่ทำให้ผิดกฎทั้งแถวและหลักของมัน",
+    return {t:"ทุกแถวและทุกหลักต้องมีเลข 1–9 ครบ ห้ามซ้ำ — หาช่องเดียวที่ทำให้ผิดกฎทั้งแถวและหลักของมัน",
       ans:ans(ox+bc*cw+cw/2, oy+br*ch+ch/2, cw*0.40),c};
   }},
 
   /* H2 · ผลรวมแถว/หลัก: ช่องผิดคือจุดตัดของแถวที่รวมไม่ตรง กับหลักที่รวมไม่ตรง */
   {id:"magicsum", make(d){
     const {c,g}=base(d);
-    const R0=5,C0=5;
+    const R0=6,C0=6;
     const M=[];
     for(let r=0;r<R0;r++){M.push([]);for(let cc=0;cc<C0;cc++)M[r].push(RI(11,79));}
     const rowS=M.map(r=>r.reduce((a,b)=>a+b,0));
     const colS=[];for(let cc=0;cc<C0;cc++){let s2=0;for(let r=0;r<R0;r++)s2+=M[r][cc];colS.push(s2);}
     const br=RI(0,R0-1), bc=RI(0,C0-1);
-    const delta=P([-9,-7,-6,-4,-3,3,4,6,7,9]);
+    const delta=P([-3,-2,-1,1,2,3]);
     M[br][bc]+=delta;                        // ผลรวมที่โชว์ = ค่าที่ถูกต้อง (ไม่แก้ตาม)
-    const cw=132, ch=88, ox=W/2-(C0+1)*cw/2, oy=H/2-(R0+1)*ch/2+6;
+    const cw=112, ch=76, ox=W/2-(C0+1)*cw/2, oy=H/2-(R0+1)*ch/2+6;
     g.textAlign="center";g.textBaseline="middle";
     for(let r=0;r<R0;r++)for(let cc=0;cc<C0;cc++){
       const x=ox+cc*cw,y=oy+r*ch;
       g.fillStyle="rgba(16,26,62,.6)";g.fillRect(x,y,cw,ch);
       g.strokeStyle="rgba(140,180,255,.24)";g.lineWidth=1.5;g.strokeRect(x,y,cw,ch);
-      g.fillStyle="#eaf3ff";g.font="700 34px Kanit,sans-serif";
+      g.fillStyle="#eaf3ff";g.font="700 28px Kanit,sans-serif";
       g.fillText(String(M[r][cc]),x+cw/2,y+ch/2+2);
     }
     for(let r=0;r<R0;r++){
@@ -2593,13 +2593,13 @@ const QG = (()=>{
     for(let i=0;i<n;i++){
       const op=P(["+","−","×"]);
       let a,b,r;
-      if(op==="×"){a=RI(6,19);b=RI(4,12);r=a*b;}
-      else if(op==="+"){a=RI(38,299);b=RI(29,288);r=a+b;}
-      else{a=RI(120,480);b=RI(23,110);r=a-b;}
+      if(op==="×"){a=RI(13,29);b=RI(7,19);r=a*b;}
+      else if(op==="+"){a=RI(148,899);b=RI(129,788);r=a+b;}
+      else{a=RI(420,980);b=RI(123,390);r=a-b;}
       eqs.push({a,b,op,r});
     }
     const oi=RI(0,n-1);
-    const off=P([-9,-7,-6,-4,-3,3,4,6,7,9]);
+    const off=P([-2,-1,1,2]);
     eqs[oi].r+=off;
     const cw=(W-140)/cols, ch=118, ox=70, oy=H/2-rows*ch/2+4;
     g.textAlign="center";g.textBaseline="middle";
@@ -2622,8 +2622,8 @@ const QG = (()=>{
     let t0=RI(0,11)*60+RI(0,59);
     const times=[];for(let i=0;i<n;i++)times.push((t0+i*step)%720);
     const oi=RI(1,n-2);
-    let off=P([-25,-20,-15,15,20,25]);
-    while(off%step===0||step%Math.abs(off)===0)off=P([-23,-17,-13,13,17,23]);
+    let off=P([-8,-7,-6,-5,5,6,7,8]);
+    while(off%step===0||step%Math.abs(off)===0)off=P([-8,-7,-6,-5,5,6,7,8]);
     times[oi]=((times[oi]+off)%720+720)%720;
     const cols=3, rows=2, cw=W/cols, ch=(H-60)/rows;
     for(let i=0;i<n;i++){
@@ -2691,7 +2691,7 @@ const QG = (()=>{
     cand.forEach((cd,i)=>{
       const y=330+i*88; rowsY.push(y);
       let rv=cd.val;
-      if(i===oi){ rv=cd.val+P([-2,-1,1,2]); if(rv<1)rv=cd.val+2; }
+      if(i===oi){ rv=cd.val+P([-1,1]); if(rv<1)rv=cd.val+1; }
       drawRow(y,cd.left,mk("●",rv),i===0?"ตรวจสอบ":null);
     });
     return {t:"สองบรรทัดบนคือกติกาแลกเปลี่ยน — หาบรรทัดเดียวด้านล่างที่คำนวณแล้วไม่จริง",
@@ -2707,7 +2707,10 @@ const QG = (()=>{
     const ox=W/2-(n*sw+(n-1)*gap)/2, oy=H/2-sh/2-20;
     const digits=[];for(let i=0;i<n;i++)digits.push(RI(0,9));
     const oi=RI(0,n-1);
-    let shown=digits[oi]; while(shown===digits[oi])shown=RI(0,9);
+    /* คู่ที่ต่างกันแค่ 1 ขีด → มองผ่าน ๆ แทบเหมือนกัน */
+    const NEAR={0:[8],1:[7],3:[9],5:[6],6:[8],7:[1],8:[0,6,9],9:[3,8]};
+    digits[oi]=P(Object.keys(NEAR).map(Number));
+    let shown=P(NEAR[digits[oi]]);
     for(let i=0;i<n;i++){
       const x=ox+i*(sw+gap), y=oy;
       const on=SEG[i===oi?shown:digits[i]];
@@ -2773,7 +2776,7 @@ const QG = (()=>{
   /* H8 · ลำดับจำนวนเหลี่ยม: เพิ่มทีละ 1 มีรูปเดียวที่ผิด */
   {id:"polyseq", make(d){
     const {c,g}=base(d);
-    const n=6, start=RI(3,5);
+    const n=6, start=RI(6,9);
     const sides=[];for(let i=0;i<n;i++)sides.push(start+i);
     const oi=RI(1,n-1);
     sides[oi]+=P([-1,1,1]);
@@ -2807,10 +2810,8 @@ const QG = (()=>{
     const vals=[];
     for(let i=0;i<rows;i++)vals.push(RI(3,62));
     const oi=RI(0,rows-1);
-    let show=vals[oi];
-    for(let g2=0;g2<40&&show===vals[oi];g2++)
-      show=Math.max(1,Math.min(63,vals[oi]+P([-16,-8,-4,-2,-1,1,2,4,8,16])));
-    if(show===vals[oi])show=vals[oi]===63?62:vals[oi]+1;
+    let show=vals[oi]^(1<<RI(0,5));          // ต่างกันแค่บิตเดียว
+    if(show<1||show>63)show=vals[oi]^1;
     const dw=78, ox=W/2-(bits*dw)/2-70, oy=H/2-rows*76/2+10;
     for(let r=0;r<rows;r++){
       const y=oy+r*76+38;
@@ -2836,7 +2837,7 @@ const QG = (()=>{
   /* H10 · ตารางจุด: จำนวนจุดต้องเพิ่มทีละ 1 ตามหลัก */
   {id:"matrixdots", make(d){
     const {c,g}=base(d);
-    const cols=5, rows=4, start=RI(4,6);
+    const cols=6, rows=4, start=RI(7,10);
     const cw=(W-120)/cols, ch=(H-140)/rows, ox=60, oy=90;
     const br=RI(0,rows-1), bc=RI(0,cols-1);
     for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
@@ -2850,7 +2851,7 @@ const QG = (()=>{
       for(let i=0;i<k;i++){
         const a=-Math.PI/2+i/k*TAU;
         g.fillStyle=cc%2?"#8fe3ff":"#ffd23f";
-        g.beginPath();g.arc(x+cw/2+Math.cos(a)*Rr, y+ch/2+Math.sin(a)*Rr, 9,0,TAU);g.fill();
+        g.beginPath();g.arc(x+cw/2+Math.cos(a)*Rr, y+ch/2+Math.sin(a)*Rr, 7,0,TAU);g.fill();
       }
     }
     g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
@@ -2863,10 +2864,10 @@ const QG = (()=>{
   {id:"isocube", make(d){
     const {c,g}=base(d);
     const n=6, counts=[];
-    for(let i=0;i<n;i++)counts.push(RI(3,9));
+    for(let i=0;i<n;i++)counts.push(RI(6,13));
     const oi=RI(0,n-1);
-    let show=counts[oi]+P([-2,-1,1,2]); if(show<1)show=counts[oi]+2;
-    const cw=W/n, S2=30, baseY=H-160;
+    let show=counts[oi]+P([-1,1]); if(show<1)show=counts[oi]+1;
+    const cw=W/n, S2=21, baseY=H-150;
     for(let i=0;i<n;i++){
       const cx=cw*i+cw/2;
       for(let k=0;k<counts[i];k++){
@@ -2897,11 +2898,11 @@ const QG = (()=>{
      (ต้องหาทิศแสงจากส่วนใหญ่ก่อน แล้วค่อยไล่ทีละชิ้น) */
   {id:"shadowlogic", make(d){
     const {c,g}=base(d);
-    const cols=5,rows=3,n=cols*rows;
+    const cols=6,rows=4,n=cols*rows;
     const cw=(W-120)/cols, ch=(H-190)/rows, ox=60, oy=120;
     const lightA=R(0,TAU);
     const oi=RI(0,n-1);
-    let badA=lightA+R(1.1,2.2)*P([-1,1]);
+    let badA=lightA+R(0.34,0.6)*P([-1,1]);
     /* ดวงอาทิตย์บอกใบ้ที่มุมภาพ */
     const sx=W/2+Math.cos(lightA+Math.PI)*430, sy=170+Math.sin(lightA+Math.PI)*150;
     const sg=g.createRadialGradient(sx,sy,4,sx,sy,120);
@@ -2968,7 +2969,7 @@ const QG = (()=>{
   /* X3 · ทางเดินเขาวงกต: มีจุดเดียวที่กำแพงขาด ทำให้ทะลุออกนอกเส้นทางได้ */
   {id:"mazegap", make(d){
     const {c,g}=base(d);
-    const cols=13, rows=8;
+    const cols=17, rows=11;
     const cw=(W-120)/cols, ch=(H-140)/rows, ox=60, oy=70;
     /* สร้างกำแพงล้อมพื้นที่แบบสุ่ม แล้วเจาะรูเดียว */
     const V=[],Hh=[];
@@ -3081,7 +3082,7 @@ const QG = (()=>{
   /* X6 · นับซ้อนทับ: ตัวเลขบอกจำนวนวงที่ทับกันตรงนั้น มีป้ายเดียวที่นับผิด */
   {id:"overlap", make(d){
     const {c,g}=base(d);
-    const n=RI(7,9);
+    const n=RI(10,12);
     const circles=[];
     for(let i=0;i<n;i++)circles.push({x:R(W*0.16,W*0.84),y:R(H*0.22,H*0.78),r:R(95,155)});
     g.lineWidth=5;
@@ -3107,7 +3108,7 @@ const QG = (()=>{
     const oi=RI(0,pts.length-1);
     pts.forEach((pt,i)=>{
       let show=pt.cnt;
-      if(i===oi){show=pt.cnt+P([-2,-1,1,2]);if(show<0)show=pt.cnt+2;}
+      if(i===oi){show=pt.cnt+P([-1,1]);if(show<1)show=pt.cnt+1;}
       g.fillStyle="#04070f";g.beginPath();g.arc(pt.x,pt.y,29,0,TAU);g.fill();
       g.strokeStyle="#ffd23f";g.lineWidth=4;g.stroke();
       g.fillStyle="#ffd23f";g.font="800 30px Kanit,sans-serif";
@@ -3141,7 +3142,7 @@ const QG = (()=>{
       g.fillRect(x,y,cw,ch);
       g.strokeStyle="rgba(140,180,255,.22)";g.lineWidth=1.5;g.strokeRect(x,y,cw,ch);
       let k=f(r,cc);
-      if(r===br&&cc===bc)k=Math.max(1,k+P([-2,-1,1,2]));
+      if(r===br&&cc===bc)k=Math.max(1,k+P([-1,1]));
       const per=Math.min(6,k), Rr=Math.min(cw,ch)*0.26;
       for(let i=0;i<k;i++){
         const ring=Math.floor(i/6), idx=i%6;
@@ -3187,7 +3188,7 @@ const QG = (()=>{
     cand.forEach((cd,i)=>{
       const y=310+i*82;
       let rv=cd.val;
-      if(i===oi){rv=cd.val+P([-3,-2,2,3]);if(rv<1)rv=cd.val+3;}
+      if(i===oi){rv=cd.val+P([-1,1]);if(rv<1)rv=cd.val+1;}
       g.fillStyle="#eaf3ff";g.font="700 34px Kanit,sans-serif";g.textAlign="left";
       g.fillText(cd.nb+" ■  +  "+cd.nt+" ▲   =   "+rv+" ●",120,y);
       rows.push(y);
@@ -3310,7 +3311,7 @@ const QG = (()=>{
     for(let i=1;i<n;i++)v.push(i%2 ? v[i-1]+a1 : v[i-1]*b1);
     const oi=RI(2,n-1);
     const shown=v.slice();
-    shown[oi]=v[oi]+P([-4,-3,-2,2,3,4]);
+    shown[oi]=v[oi]+P([-1,1]);
     const cols=4, rows=2;
     const cw=(W-120)/cols, ch=(H-200)/rows, ox=60, oy=170;
     g.textAlign="center";g.textBaseline="middle";
@@ -3338,10 +3339,10 @@ const QG = (()=>{
     const n=8;
     const vals=[];
     let cur=RI(88,99);
-    for(let i=0;i<n;i++){cur-=RI(4,9);vals.push(cur);}
+    for(let i=0;i<n;i++){cur-=RI(5,9);vals.push(cur);}
     const oi=RI(1,n-2);
     const shown=vals.slice();
-    shown[oi]=vals[oi-1]+RI(2,6);            // ทำให้มากกว่าตัวก่อนหน้า = ผิดลำดับ
+    shown[oi]=vals[oi-1]+1;                  // ล้ำตัวก่อนหน้าแค่ 1 หน่วย
     const cw=(W-100)/n, ox=50, cy=H/2;
     for(let i=0;i<n;i++){
       const x=ox+i*cw+cw/2, v=shown[i];
@@ -3390,7 +3391,7 @@ const QG = (()=>{
     path.forEach((p,i)=>{
       const x=ox+p[1]*cw+cw/2, y=oy+p[0]*ch+ch/2;
       let v=i+1;
-      if(i===oi)v=i+1+P([-2,-1,1,2]);
+      if(i===oi)v=i+1+P([-1,1]);
       g.fillStyle="#ffd23f";g.font="800 30px Kanit,sans-serif";
       g.fillText(String(v),x,y);
     });
@@ -3437,6 +3438,147 @@ const QG = (()=>{
   }}
   ];
 
+  /* ================= ความรู้ + มิติสัมพันธ์: ต้องรู้ของจริง แล้วยังต้องหมุนในหัว =================
+     ทุกโหมดวางเลย์เอาต์ที่คนคุ้นเคย แต่ "ลบป้ายออกหมด" และพลิก/หมุนไว้ */
+  const KNOW=[
+
+  /* K1 · แป้นพิมพ์ QWERTY เปล่า (พลิกซ้าย-ขวา หรือกลับหัว) */
+  {id:"qwerty", make(d){
+    const {c,g}=base(d);
+    const rows=["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+    const kw=88,kh=88,gap=9;
+    const flip=P(["none","mirror","upside"]);
+    const oy=H/2-(rows.length*(kh+gap))/2+10;
+    const slots=[];
+    rows.forEach((row,ri)=>{
+      const ox=W/2-(row.length*(kw+gap))/2+ri*26;
+      for(let i=0;i<row.length;i++)slots.push({x:ox+i*(kw+gap),y:oy+ri*(kh+gap),ch:row[i]});
+    });
+    const pick=P(slots.filter(s=>!"QWAZ".includes(s.ch)));
+    g.save();
+    if(flip==="mirror"){g.translate(W,0);g.scale(-1,1);}
+    if(flip==="upside"){g.translate(W,H);g.rotate(Math.PI);}
+    slots.forEach(s=>{
+      rr(g,s.x,s.y,kw,kh,12);
+      const grd=g.createLinearGradient(s.x,s.y,s.x,s.y+kh);
+      grd.addColorStop(0,"#26355f");grd.addColorStop(1,"#141c3c");
+      g.fillStyle=grd;g.fill();
+      g.strokeStyle="rgba(150,190,255,.35)";g.lineWidth=2;g.stroke();
+    });
+    g.restore();
+    let ax=pick.x+kw/2, ay=pick.y+kh/2;
+    if(flip==="mirror")ax=W-ax;
+    if(flip==="upside"){ax=W-ax;ay=H-ay;}
+    const lbl=flip==="none"?"":(flip==="mirror"?"(ภาพนี้ถูกพลิกซ้าย-ขวา)":"(ภาพนี้ถูกหมุนกลับหัว)");
+    g.fillStyle="#9db4dd";g.font="600 24px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("แป้นพิมพ์ QWERTY แบบไม่มีตัวอักษร "+lbl,W/2,64);
+    return {t:'บนแป้นพิมพ์ QWERTY นี้ — ปุ่ม "'+pick.ch+'" อยู่ตรงไหน '+lbl,
+      ans:ans(ax,ay,kw*0.46),c};
+  }},
+
+  /* K2 · แป้นโทรศัพท์ / เครื่องคิดเลข เปล่า (สลับผังกัน) */
+  {id:"keypad", make(d){
+    const {c,g}=base(d);
+    const phone=Math.random()<0.5;
+    /* โทรศัพท์: 1-2-3 อยู่บน · เครื่องคิดเลข: 7-8-9 อยู่บน */
+    const layout=phone?[1,2,3,4,5,6,7,8,9,"*",0,"#"]:[7,8,9,4,5,6,1,2,3,"",0,""];
+    const cols=3, rows=4, bs=Math.min(120,(H-200)/rows-16), gap=20;
+    const ox=W/2-(cols*bs+(cols-1)*gap)/2, oy=H/2-(rows*bs+(rows-1)*gap)/2+14;
+    const idxs=layout.map((v,i)=>[v,i]).filter(x=>typeof x[0]==="number"&&x[0]!==0);
+    const pick=P(idxs);
+    for(let i=0;i<cols*rows;i++){
+      if(layout[i]==="")continue;
+      const cc=i%cols, r=Math.floor(i/cols);
+      const x=ox+cc*(bs+gap), y=oy+r*(bs+gap);
+      g.beginPath();g.arc(x+bs/2,y+bs/2,bs*0.44,0,Math.PI*2);
+      g.fillStyle="#28324f";g.fill();
+      g.strokeStyle="#6d7fa8";g.lineWidth=3;g.stroke();
+    }
+    g.fillStyle="#9db4dd";g.font="600 24px Kanit,sans-serif";g.textAlign="center";
+    g.fillText(phone?"แป้นกดโทรศัพท์ (ผังมาตรฐาน)":"แป้นตัวเลขเครื่องคิดเลข (ผังมาตรฐาน)",W/2,74);
+    const i=pick[1], cc=i%cols, r=Math.floor(i/cols);
+    return {t:"บน"+(phone?"แป้นกดโทรศัพท์":"แป้นเลขเครื่องคิดเลข")+"ที่ลบตัวเลขออก — ปุ่มเลข "+pick[0]+" อยู่ตรงไหน",
+      ans:ans(ox+cc*(bs+gap)+bs/2, oy+r*(bs+gap)+bs/2, bs*0.46),c};
+  }},
+
+  /* K3 · หน้าปัดนาฬิกาเปล่าที่ถูกหมุน — ต้องหมุนในหัวก่อน */
+  {id:"clockface", make(d){
+    const {c,g}=base(d);
+    const cx=W/2, cy=H/2+10, Rr=Math.min(W,H)*0.36;
+    const rot=P([1,2,3,4,5,6,7,8,9,10,11]);      // หมุนไปกี่ชั่วโมง
+    const target=RI(1,12);
+    g.strokeStyle="#dfe9ff";g.lineWidth=6;
+    g.beginPath();g.arc(cx,cy,Rr,0,Math.PI*2);g.stroke();
+    for(let k=1;k<=12;k++){
+      const a=-Math.PI/2+((k+rot)%12)/12*Math.PI*2;
+      const isTop=(k===12);
+      g.strokeStyle=isTop?"#ffd23f":"#8fb6ff";g.lineWidth=isTop?9:4;
+      g.beginPath();
+      g.moveTo(cx+Math.cos(a)*(Rr-26),cy+Math.sin(a)*(Rr-26));
+      g.lineTo(cx+Math.cos(a)*(Rr-6),cy+Math.sin(a)*(Rr-6));g.stroke();
+    }
+    g.fillStyle="#ffd23f";g.beginPath();g.arc(cx,cy,10,0,Math.PI*2);g.fill();
+    g.fillStyle="#9db4dd";g.font="600 23px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("หน้าปัดถูกหมุนไป — ขีดสีทองคือตำแหน่งเลข 12",W/2,64);
+    const a=-Math.PI/2+((target+rot)%12)/12*Math.PI*2;
+    return {t:"หน้าปัดนาฬิกานี้ถูกหมุน โดยขีดทองคือเลข 12 — ขีดของเลข "+target+" อยู่ตรงไหน",
+      ans:ans(cx+Math.cos(a)*(Rr-16),cy+Math.sin(a)*(Rr-16),46),c};
+  }},
+
+  /* K4 · เปียโนไร้ป้าย — ต้องรู้แพตเทิร์นคีย์ดำ 2-3 */
+  {id:"pianokey", make(d){
+    const {c,g}=base(d);
+    const oct=3, nW=oct*7;
+    const kw=(W-140)/nW, ox=70, oy=H/2-160, kh=320;
+    for(let i=0;i<nW;i++){
+      g.fillStyle="#f4f7ff";g.fillRect(ox+i*kw,oy,kw-2,kh);
+      g.strokeStyle="#8a97b8";g.lineWidth=1.5;g.strokeRect(ox+i*kw,oy,kw-2,kh);
+    }
+    const pat=[1,1,0,1,1,1,0];
+    const blacks=[];
+    for(let o=0;o<oct;o++)for(let i=0;i<7;i++) if(pat[i]) blacks.push({x:ox+(o*7+i)*kw+kw*0.68,o,i});
+    blacks.forEach(b=>{g.fillStyle="#0d1330";g.fillRect(b.x,oy,kw*0.62,kh*0.62);});
+    /* คีย์ขาวตัวแรกของภาพ = โด (C) */
+    const NAMES=["โด","เร","มี","ฟา","ซอล","ลา","ที"];
+    const oi=RI(0,nW-1);
+    const nm=NAMES[oi%7], octn=Math.floor(oi/7)+1;
+    g.fillStyle="#ffd23f";g.font="700 26px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("คีย์ขาวซ้ายสุด = โด (C) ของช่วงเสียงที่ 1",W/2,H-58);
+    g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+    g.fillText("ใช้แพตเทิร์นคีย์ดำ 2 ตัว–3 ตัว เป็นตัวนับ",W/2,H-24);
+    return {t:"บนเปียโนที่ไม่มีป้ายชื่อ — คีย์ "+nm+" ของช่วงเสียงที่ "+octn+" อยู่ตรงไหน",
+      ans:ans(ox+oi*kw+kw/2, oy+kh*0.82, Math.max(44,kw*0.55)),c};
+  }},
+
+  /* K5 · กระดานหมากรุกเปล่า — ต้องรู้ตำแหน่งเริ่มต้นของตัวหมาก */
+  {id:"chessstart", make(d){
+    const {c,g}=base(d);
+    const N=8, cs=Math.min((H-150)/N,(W-150)/N);
+    const ox=W/2-N*cs/2, oy=H/2-N*cs/2+16;
+    for(let r=0;r<N;r++)for(let cc=0;cc<N;cc++){
+      g.fillStyle=(r+cc)%2?"#31406f":"#dfe6f7";
+      g.fillRect(ox+cc*cs,oy+r*cs,cs,cs);
+    }
+    g.strokeStyle="#ffd23f";g.lineWidth=4;g.strokeRect(ox,oy,N*cs,N*cs);
+    /* แถวบน = ฝั่งดำ (แถว 8) , แถวล่าง = ฝั่งขาว (แถว 1) */
+    const FILES=["a","b","c","d","e","f","g","h"];
+    const PIECES=[["เรือ",[0,7]],["ม้า",[1,6]],["บิชอป",[2,5]],["ควีน",[3]],["คิง",[4]]];
+    const side=P(["ขาว","ดำ"]);
+    const pc=P(PIECES);
+    const file=P(pc[1]);
+    const row=side==="ขาว"?7:0;
+    g.fillStyle="#9db4dd";g.font="600 23px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("กระดานหมากรุกเปล่า · ฝั่งขาวอยู่แถวล่าง · ฝั่งดำอยู่แถวบน",W/2,50);
+    for(let i=0;i<N;i++){
+      g.fillStyle="#6f83ac";g.font="600 19px Kanit,sans-serif";
+      g.fillText(FILES[i],ox+i*cs+cs/2,oy+N*cs+26);
+      g.fillText(String(8-i),ox-22,oy+i*cs+cs/2+6);
+    }
+    return {t:"ตอนเริ่มเกมหมากรุก — ตัว"+pc[0]+"ฝั่ง"+side+" ตัวหนึ่งยืนอยู่ช่องไหน (วงช่องนั้น)",
+      ans:ans(ox+file*cs+cs/2, oy+row*cs+cs/2, cs*0.46),c};
+  }}
+  ];
+
   let BAG=[], BAGH=[];
   function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
   function draw1(pool,bagRef,avoid){
@@ -3455,18 +3597,18 @@ const QG = (()=>{
     d=Math.max(0,Math.min(1,d==null?.6:d));
     /* ★ ตัดโจทย์แนว "มองแวบเดียวก็เจอ" ออกจากการสุ่มทั้งหมด — เหลือเฉพาะโจทย์ที่ต้องคิด */
     const useHard = true;
-    const POOLH = HARD.concat(BRUTAL,DEEP);
+    const POOLH = HARD.concat(BRUTAL,DEEP,KNOW);
     const o=draw1(POOLH,_bagH,avoid);
     const r=o.make(d);
-    const stars = d<.5?"⭐⭐⭐":(d<.78?"⭐⭐⭐⭐":"⭐⭐⭐⭐⭐");
+    const stars = d<.55?"⭐⭐⭐⭐":"⭐⭐⭐⭐⭐";
     return {id:uid(), mode:o.id, hard:useHard,
       text:r.t+"  ·  ระดับ "+stars,
       media:{type:"image",dataUrl:r.c.toDataURL("image/jpeg",0.92)},
       ans:r.ans};
   }
-  return {make, modes:HARD.length+BRUTAL.length+DEEP.length, easyModes:OBJ.length,
-    hardModes:HARD.length+BRUTAL.length+DEEP.length,
-    list:HARD.map(o=>o.id).concat(BRUTAL.map(o=>o.id),DEEP.map(o=>o.id))};
+  return {make, modes:HARD.length+BRUTAL.length+DEEP.length+KNOW.length, easyModes:OBJ.length,
+    hardModes:HARD.length+BRUTAL.length+DEEP.length+KNOW.length,
+    list:HARD.map(o=>o.id).concat(BRUTAL.map(o=>o.id),DEEP.map(o=>o.id),KNOW.map(o=>o.id))};
 })();
 
 
@@ -3751,6 +3893,175 @@ const QGA = (()=>{
   }}
   ];
 
+  /* ================= 🧪 โจทย์ทำนาย: ดูอัตราแล้วคาดการณ์อนาคต =================
+     คลิปโจทย์: เห็นการเติมช่วงแรก แล้วถูกบังไว้ → ต้องคำนวณอัตราเองว่าอีก N วิจะถึงไหน
+     คลิปเฉลย: เล่นต่อจนถึงเวลานั้นจริง ๆ ให้เห็นกับตา */
+  const PREDICT=[
+
+  /* P1 · น้ำในบีกเกอร์ */
+  {id:"beaker", build(){
+    const bx=W/2-150, bw=300, by=110, bh=430;
+    const rate=RI(6,12);                       // % ต่อวินาที
+    const shownT=P([1.5,2.0]);                 // เห็นการเติมกี่วินาที
+    const startL=RI(4,12);
+    /* เลือกเวลาที่ถามให้ระดับตกในช่วง 40–92% เสมอ → ไม่มีทางเดาว่า "เต็มแล้ว" */
+    const okT=[];
+    for(let k=4;k<=11;k++){const v=startL+rate*k;if(v>=40&&v<=92)okT.push(k);}
+    const askT=okT.length?P(okT):Math.max(4,Math.round((70-startL)/rate));
+    const lvlAt=t=>Math.min(100,startL+rate*t);
+    const target=lvlAt(askT);
+    const yOf=L2=>by+bh-(bh*L2/100);
+    function shell(g){
+      /* ตัวบีกเกอร์ */
+      g.strokeStyle="rgba(200,225,255,.85)";g.lineWidth=7;g.lineJoin="round";
+      g.beginPath();g.moveTo(bx,by);g.lineTo(bx,by+bh);g.lineTo(bx+bw,by+bh);g.lineTo(bx+bw,by);g.stroke();
+      g.fillStyle="rgba(160,200,255,.05)";g.fillRect(bx,by,bw,bh);
+      /* ขีดสเกลทุก 10% */
+      for(let k=0;k<=10;k++){
+        const y=yOf(k*10);
+        g.strokeStyle=k%5===0?"rgba(255,210,63,.75)":"rgba(200,225,255,.35)";
+        g.lineWidth=k%5===0?3:2;
+        g.beginPath();g.moveTo(bx,y);g.lineTo(bx+(k%5===0?42:26),y);g.stroke();
+        if(k%5===0){g.fillStyle="#ffd23f";g.font="700 22px Kanit,sans-serif";
+          g.textAlign="left";g.textBaseline="middle";g.fillText(k*10+"%",bx+50,y);}
+      }
+    }
+    function water(g,L2,t){
+      const y=yOf(L2);
+      const gr=g.createLinearGradient(0,y,0,by+bh);
+      gr.addColorStop(0,"#7fe0ff");gr.addColorStop(1,"#1c6fd0");
+      g.fillStyle=gr;g.fillRect(bx+4,y,bw-8,by+bh-y-4);
+      /* ผิวน้ำกระเพื่อม */
+      g.strokeStyle="rgba(255,255,255,.75)";g.lineWidth=4;
+      g.beginPath();
+      for(let x=bx+4;x<=bx+bw-4;x+=8)g.lineTo(x,y+Math.sin(x*0.05+t*5)*3);
+      g.stroke();
+    }
+    function tap(g,t){
+      g.fillStyle="#8a97b8";g.fillRect(W/2-16,40,32,58);
+      g.fillStyle="rgba(140,220,255,.75)";
+      for(let k=0;k<6;k++){
+        const yy=100+((t*260+k*36)%(by-96));
+        g.fillRect(W/2-4,yy,8,20);
+      }
+    }
+    const build=(isReveal)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const simT = isReveal ? (t/DUR)*askT : Math.min(t,shownT);
+      tap(g,t);
+      water(g,lvlAt(simT),t);
+      shell(g);
+      /* ม่านบังหลังหมดช่วงที่ให้ดู */
+      if(!isReveal && t>shownT){
+        const a=Math.min(1,(t-shownT)/0.45);
+        g.save();g.globalAlpha=a;
+        g.fillStyle="rgba(6,10,26,.97)";g.fillRect(bx-6,by-6,bw+12,bh+12);
+        g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(bx-6,by-6,bw+12,bh+12);
+        g.fillStyle="#ffd23f";g.font="800 44px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";
+        g.fillText("? ? ?",W/2,by+bh/2-20);
+        g.fillStyle="#9db4dd";g.font="700 24px Kanit,sans-serif";
+        g.fillText("ถูกบังไว้แล้ว",W/2,by+bh/2+34);
+        g.restore();
+        /* ยังเห็นสเกลอยู่ ให้เล็งได้ */
+        g.save();g.globalAlpha=0.9;
+        for(let k=0;k<=10;k++){
+          const y=yOf(k*10);
+          g.strokeStyle=k%5===0?"rgba(255,210,63,.9)":"rgba(200,225,255,.5)";
+          g.lineWidth=k%5===0?3:2;
+          g.beginPath();g.moveTo(bx+bw-6,y);g.lineTo(bx+bw+(k%5===0?44:26),y);g.stroke();
+          if(k%5===0){g.fillStyle="#ffd23f";g.font="700 22px Kanit,sans-serif";
+            g.textAlign="left";g.textBaseline="middle";g.fillText(k*10+"%",bx+bw+52,y);}
+        }
+        g.restore();
+      }
+      /* ป้ายเวลา */
+      g.fillStyle="#eaf3ff";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="left";g.textBaseline="alphabetic";
+      g.fillText("เวลา "+simT.toFixed(1)+" วินาที",60,H-42);
+      if(isReveal){
+        g.fillStyle="#35e07a";g.font="800 28px Kanit,sans-serif";
+        g.textAlign="right";g.fillText("เฉลย: วินาทีที่ "+askT+" → "+Math.round(target)+"%",W-60,H-42);
+        if(simT>=askT-0.05){
+          const y=yOf(target);
+          g.strokeStyle="#35e07a";g.lineWidth=5;g.setLineDash([14,10]);
+          g.beginPath();g.moveTo(bx-40,y);g.lineTo(bx+bw+40,y);g.stroke();g.setLineDash([]);
+        }
+      }
+    };
+    return {
+      t:"น้ำไหลเข้าบีกเกอร์ด้วยอัตราคงที่ (ดูได้ "+shownT+" วินาทีแรกก่อนถูกบัง) — เมื่อครบวินาทีที่ "+askT+" ระดับน้ำจะอยู่ตรงไหน วงตรงระดับนั้นบนสเกล",
+      ans:{x:(bx+bw/2)/W, y:yOf(target)/W, r:0.052},
+      draw:build(false), drawReveal:build(true)
+    };
+  }},
+
+  /* P2 · รถวิ่งเข้าเส้นชัย: เห็นช่วงแรกแล้วถูกบัง ต้องทำนายตำแหน่ง */
+  {id:"racer", build(){
+    const laneY=H/2+40, x0=110, x1=W-110;
+    const spd=RI(8,15);                        // % ของระยะทางต่อวินาที
+    const shownT=P([1.5,2.0]);
+    const okT=[];
+    for(let k=3;k<=11;k++){const v=spd*k;if(v>=35&&v<=92)okT.push(k);}
+    const askT=okT.length?P(okT):Math.max(3,Math.round(65/spd));
+    const posAt=t=>Math.min(100,spd*t);
+    const target=posAt(askT);
+    const xOf=q=>x0+(x1-x0)*q/100;
+    const build=(isReveal)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      /* ถนน + สเกล */
+      g.fillStyle="rgba(20,30,70,.7)";g.fillRect(x0-30,laneY-70,x1-x0+60,140);
+      g.strokeStyle="rgba(255,210,63,.6)";g.lineWidth=3;
+      for(let k=0;k<=10;k++){
+        const x=xOf(k*10);
+        g.beginPath();g.moveTo(x,laneY+72);g.lineTo(x,laneY+96);g.stroke();
+        g.fillStyle="#ffd23f";g.font="700 20px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="top";g.fillText(k*10+"%",x,laneY+102);
+      }
+      const simT=isReveal?(t/DUR)*askT:Math.min(t,shownT);
+      const q=posAt(simT);
+      /* รถ */
+      const cx=xOf(q);
+      g.save();g.translate(cx,laneY);
+      g.fillStyle="#ff5c76";g.fillRect(-38,-20,76,40);
+      g.fillStyle="#ffd6de";g.fillRect(-14,-16,30,18);
+      g.fillStyle="#0d1330";
+      g.beginPath();g.arc(-20,22,11,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(20,22,11,0,Math.PI*2);g.fill();
+      g.restore();
+      if(!isReveal&&t>shownT){
+        const a=Math.min(1,(t-shownT)/0.45);
+        g.save();g.globalAlpha=a;
+        g.fillStyle="rgba(6,10,26,.97)";g.fillRect(x0-32,laneY-72,x1-x0+64,144);
+        g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(x0-32,laneY-72,x1-x0+64,144);
+        g.fillStyle="#ffd23f";g.font="800 40px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("? ? ?",W/2,laneY);
+        g.restore();
+      }
+      g.fillStyle="#eaf3ff";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="left";g.textBaseline="alphabetic";
+      g.fillText("เวลา "+simT.toFixed(1)+" วินาที",60,72);
+      if(isReveal){
+        g.fillStyle="#35e07a";g.font="800 26px Kanit,sans-serif";g.textAlign="right";
+        g.fillText("เฉลย: วินาทีที่ "+askT+" → "+Math.round(target)+"%",W-60,72);
+        if(simT>=askT-0.05){
+          g.strokeStyle="#35e07a";g.lineWidth=5;g.setLineDash([14,10]);
+          g.beginPath();g.moveTo(xOf(target),laneY-90);g.lineTo(xOf(target),laneY+90);g.stroke();g.setLineDash([]);
+        }
+      }
+    };
+    return {
+      t:"รถวิ่งด้วยความเร็วคงที่ (ดูได้ "+shownT+" วินาทีแรกก่อนถูกบัง) — เมื่อครบวินาทีที่ "+askT+" รถจะอยู่ตรงไหนบนสเกล",
+      ans:{x:xOf(target)/W, y:laneY/W, r:0.050},
+      draw:build(false), drawReveal:build(true)
+    };
+  }}
+  ];
+
   function canRecord(){
     try{
       const c=document.createElement("canvas");
@@ -3796,9 +4107,10 @@ const QGA = (()=>{
   }
 
   let BAG=[];
+  const ALLA=()=>MODES.concat(PREDICT);
   function pick(avoid){
     if(!BAG.length){
-      BAG=MODES.slice();
+      BAG=ALLA().slice();
       for(let i=BAG.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const x=BAG[i];BAG[i]=BAG[j];BAG[j]=x;}
     }
     let idx=0;
@@ -3809,11 +4121,16 @@ const QGA = (()=>{
     const m=pick(avoid);
     const spec=m.build();
     const dataUrl=await record(spec.draw);
-    return {id:uid(), mode:"anim:"+m.id, hard:true, anim:true,
+    const q={id:uid(), mode:"anim:"+m.id, hard:true, anim:true,
       text:"🎬 "+spec.t+"  ·  ระดับ ⭐⭐⭐⭐⭐",
       media:{type:"video",dataUrl}, ans:spec.ans};
+    if(spec.drawReveal){                       // อัดคลิปเฉลยแยกอีกชุด
+      try{ q.reveal={type:"video",dataUrl:await record(spec.drawReveal)}; }catch(e){}
+    }
+    return q;
   }
-  return {make, canRecord, modes:MODES.length, DUR, _MODES:MODES};
+  return {make, canRecord, modes:MODES.length+PREDICT.length, DUR,
+    _MODES:MODES.concat(PREDICT)};
 })();
 
 function genQuestion(seed){
@@ -3956,7 +4273,7 @@ const Ed={
     if(btn){btn.disabled=true;}
     let last=null, ok=0;
     for(let i=0;i<n;i++){
-      toast("🎬 กำลังสร้างโจทย์ภาพเคลื่อนไหว "+(i+1)+"/"+n+" … (ราว 4 วิ/ข้อ)","#41c7ff");
+      toast("🎬 กำลังสร้างโจทย์ภาพเคลื่อนไหว "+(i+1)+"/"+n+" … (4–8 วิ/ข้อ)","#41c7ff");
       try{
         const q=await QGA.make(last);
         last=q.mode.replace("anim:","");
@@ -3988,7 +4305,7 @@ const Ed={
       try{
         const d=JSON.parse(fr.result);
         if(!d||!Array.isArray(d.questions))throw new Error("รูปแบบไฟล์ไม่ถูกต้อง");
-        const clean=d.questions.filter(q=>q&&q.media&&q.media.dataUrl);
+        const clean=d.questions.filter(q=>q&&q.media&&q.media.dataUrl);   // q.reveal ติดไปกับ object อยู่แล้ว
         clean.forEach(q=>{if(!q.id)q.id=uid();});
         App.editor.questions=clean;
         if(d.final&&d.final.media){d.final.id=d.final.id||uid();App.editor.final=d.final;}
@@ -4854,6 +5171,7 @@ function drawScreenMedia(q){
   }else{
     if(!_screenVideoEl){_screenVideoEl=document.createElement("video");
       _screenVideoEl.muted=true;_screenVideoEl.loop=true;_screenVideoEl.playsInline=true;}
+    _screenVideoEl.loop=true;delete _screenVideoEl.dataset.rv;
     _screenVideoEl.src=q.media.dataUrl;_screenVideoEl.play().catch(()=>{});
     G3._vidReveal=performance.now();
     G3.shake=Math.max(G3.shake||0,.3);
@@ -4864,8 +5182,9 @@ function drawScreenMedia(q){
 /* 🎯 โชว์เฉลยจุดที่ถูกต้อง: วงทอง-ฟ้าบีบเข้าเป้า + วงเขียวเต้น + สปาร์ก */
 function runAnswerShowcase(rd){
   const q=questionById(rd.qid);if(!q||!q.ans)return;
+  useRevealClip(q);
   const map=G3._mediaMap;
-  const el0=(q.media.type==="image")?G3._mediaImg:_screenVideoEl;
+  const el0=(q.media.type==="image"&&!q.reveal)?G3._mediaImg:_screenVideoEl;
   if(!map||!el0)return;
   App.localFlags.camReveal=true;G3.scanning=true;
   Sfx.whoosh();
@@ -7872,8 +8191,23 @@ function fireQNum(rd){
   showQuestionNumberFX(rd.final?null:rd.no, qNumLabel(rd), !!rd.final);
 }
 /* radar reveal show — สแกนบนจอวงแหวน 3D โดยตรง (ทุกคนเห็นผ่านกล้องตัด) */
+/* 🎬 ถ้าโจทย์มีคลิปเฉลยแยก → สลับไปเล่นคลิปนั้นตอนเปิดเฉลย */
+function useRevealClip(q){
+  if(!q||!q.reveal||!q.reveal.dataUrl)return false;
+  if(!_screenVideoEl){_screenVideoEl=document.createElement("video");
+    _screenVideoEl.muted=true;_screenVideoEl.playsInline=true;}
+  if(_screenVideoEl.dataset.rv===q.id)return true;
+  _screenVideoEl.dataset.rv=q.id;
+  _screenVideoEl.loop=false;
+  _screenVideoEl.src=q.reveal.dataUrl;
+  try{_screenVideoEl.currentTime=0;}catch(e){}
+  _screenVideoEl.play().catch(()=>{});
+  G3.screenState="videomedia";
+  return true;
+}
 function runRevealShow(rd){
   const q=questionById(rd.qid);if(!q)return;
+  useRevealClip(q);
   const pl=rd.phase==="stealReveal"?rd.stealPlacement:rd.placement;
   App.localFlags.camReveal=true;      // ตัดกล้องทุกคนไปที่จอวงแหวนใหญ่
   G3.scanning=true;
@@ -7884,7 +8218,7 @@ function runRevealShow(rd){
     if(G3._mediaImg&&G3._mediaImg.src===q.media.dataUrl){img=G3._mediaImg;imgReady=true;}
     else{img=new Image();img.onload=()=>imgReady=true;img.src=q.media.dataUrl;}
   }
-  const vid=q.media.type==="video"?_screenVideoEl:null;
+  const vid=(q.media.type==="video"||q.reveal)?_screenVideoEl:null;
   function base(){
     const gr=g.createRadialGradient(C,C,60,C,C,520);
     gr.addColorStop(0,"#0c1540");gr.addColorStop(1,"#05081e");
@@ -8654,7 +8988,7 @@ $$(".menu-col .btn").forEach(b=>{
 $("#btnCreate").onclick=()=>{$("#menu").classList.add("hidden");$("#editor").classList.remove("hidden");
   if(!App.editor.questions.length)Ed.render();};
 $("#edGen").onclick=()=>Ed.gen(24);
-$("#edGenAnim").onclick=()=>Ed.genAnim(6);
+$("#edGenAnim").onclick=()=>Ed.genAnim(8);
 $("#edSave").onclick=()=>{
   if(!App.editor.questions.length&&!App.editor.final){toast("ยังไม่มีโจทย์ให้บันทึก");return;}
   Ed.save();};
