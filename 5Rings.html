@@ -9691,8 +9691,8 @@ function runClipReveal(rd){
     if(after>0.06){
       const a=Math.min(1,(after-0.06)/0.18);
       const head=ok?"ตอบถูก!":"ตอบผิด";
-      const sub=ok?(TEAM+" ได้รับ "+fmt(PRIZE)+" บาท")
-                  :"เปิดโอกาสให้อีกทีม STEAL";
+      const sub=ok?("+ "+fmt(PRIZE)+" บาท ให้ "+TEAM)
+                  :"พิธีกรกด ⚡ เปิดให้อีกทีม STEAL ได้เลย";
       g.save();g.globalAlpha=a;g.textAlign="center";g.textBaseline="middle";
       const bw=760,bh=170,bx=C-bw/2,by=S-236;
       g.fillStyle="rgba(4,7,20,.86)";roundRectPath(g,bx,by,bw,bh,26);g.fill();
@@ -9711,7 +9711,12 @@ function runClipReveal(rd){
       g.shadowColor="rgba(0,0,0,.9)";g.shadowBlur=10;
       g.fillText(sub,C,by+128);
       g.restore();
-      if(!hit){hit=true;try{Sfx.suspenseHit(ok);}catch(e){}}
+      if(!hit){
+        hit=true;
+        try{Sfx.suspenseHit(ok);}catch(e){}
+        try{show3DMark(ok);}catch(e){}                 // ✓/✗ 3 มิติกลางจอ เหมือนตอนเฉลยภาพ
+        try{ if(App.role==="mc")MC.finalizeResult(); }catch(e){}   // บวกเงินรางวัลตรงจังหวะนี้
+      }
     }
     G3.screenTex.needsUpdate=true;
     if(p<1)requestAnimationFrame(frame);
