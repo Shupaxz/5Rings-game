@@ -1141,7 +1141,7 @@ textarea.inp{resize:vertical;min-height:64px}
     <div class="ed-head">
       <h2>🎬 สร้างคำถามรายการ</h2>
       <button class="btn ghost sm" id="edGen">⚙️ Gen 24 ข้อ (ยาก)</button>
-      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 20 ข้อ (ครบทุกโหมด)</button>
+      <button class="btn ghost sm" id="edGenAnim">🎬 Gen ภาพเคลื่อนไหว 20 ข้อ</button>
       <button class="btn ghost sm" id="edSave">💾 บันทึกชุดโจทย์</button>
       <button class="btn ghost sm" id="edLoad">📂 โหลดชุดโจทย์</button>
       <input type="file" id="edFile" accept=".json,application/json" hidden>
@@ -3598,6 +3598,153 @@ const QG = (()=>{
   }}
   ];
 
+  /* ================= 🧩 ชุดใหม่แบบภาพนิ่ง ================= */
+  const NEWS=[
+
+  /* S1 · เชือกพันกัน — ปลายไหนต่อกับปลายไหน */
+  {id:"ropes", make(d){
+    const {c,g}=base(d);
+    const N=RI(6,8);
+    const ax=120, bx=W-120;
+    const ys=[];for(let i=0;i<N;i++)ys.push(90+i*((H-190)/(N-1)));
+    const perm=[];for(let i=0;i<N;i++)perm.push(i);
+    for(let i=N-1;i>0;i--){const j=RI(0,i);const x=perm[i];perm[i]=perm[j];perm[j]=x;}
+    const COLS=["#ff5c76","#41c7ff","#ffd23f","#35e07a","#a97bff","#ff9a3c","#7fe0ff","#ff6fd8"];
+    const target=RI(0,N-1);
+    /* เชือกหลายเส้นซ้อนกัน ลากผ่านจุดควบคุมสุ่มเพื่อให้พันกันจริง */
+    const paths=[];
+    for(let i=0;i<N;i++){
+      const mid1={x:ax+(bx-ax)*0.33,y:ys[RI(0,N-1)]};
+      const mid2={x:ax+(bx-ax)*0.66,y:ys[RI(0,N-1)]};
+      paths.push([{x:ax,y:ys[i]},mid1,mid2,{x:bx,y:ys[perm[i]]}]);
+    }
+    /* วาดเส้นที่ไม่ใช่เป้าหมายก่อน แล้วค่อยวาดเป้าหมายทับ */
+    const drawPath=(i,hot)=>{
+      const p=paths[i];
+      g.strokeStyle=hot?COLS[i%COLS.length]:"rgba(150,175,215,.55)";
+      g.lineWidth=hot?9:6;g.lineCap="round";
+      g.beginPath();g.moveTo(p[0].x,p[0].y);
+      g.bezierCurveTo(p[1].x,p[1].y,p[2].x,p[2].y,p[3].x,p[3].y);g.stroke();
+    };
+    for(let i=0;i<N;i++)if(i!==target)drawPath(i,false);
+    drawPath(target,true);
+    for(let i=0;i<N;i++){
+      g.fillStyle=i===target?COLS[target%COLS.length]:"#28324f";
+      g.beginPath();g.arc(ax,ys[i],20,0,TAU);g.fill();
+      g.strokeStyle="rgba(255,255,255,.4)";g.lineWidth=3;g.stroke();
+      g.fillStyle="#0a1029";g.font="800 19px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";g.fillText(String(i+1),ax,ys[i]);
+      g.fillStyle="#28324f";
+      g.beginPath();g.arc(bx,ys[i],20,0,TAU);g.fill();
+      g.strokeStyle="rgba(255,255,255,.4)";g.lineWidth=3;g.stroke();
+      g.fillStyle="#dbe6ff";g.font="800 19px Kanit,sans-serif";
+      g.fillText(String.fromCharCode(65+i),bx,ys[i]);
+    }
+    g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("เชือกเส้นที่มีสีคือเส้นที่ต้องตาม",W/2,44);
+    return {t:"ปลายเชือกหมายเลข "+(target+1)+" (เส้นที่มีสี) ไปโผล่ที่ปลายตัวอักษรไหนอีกฝั่ง",
+      ans:ans(bx,ys[perm[target]],46),c};
+  }},
+
+  /* S2 · บล็อกซ้อนมีช่องว่างซ่อน — นับก้อนที่มองไม่เห็น */
+  {id:"hiddencube", make(d){
+    const {c,g}=base(d);
+    const S2=34, cols=4, rows=4;
+    const heights=[];
+    let total=0;
+    for(let r=0;r<rows;r++){heights.push([]);for(let cc=0;cc<cols;cc++){
+      const h2=RI(1,4);heights[r].push(h2);total+=h2;}}
+    const ox=W/2, oy=H/2-70;
+    const iso=(cx,ry,h2)=>({x:ox+(cx-ry)*S2*1.05, y:oy+(cx+ry)*S2*0.56-h2*S2*0.92});
+    /* วาดจากหลังมาหน้าเพื่อให้ซ้อนถูก */
+    for(let r=rows-1;r>=0;r--)for(let cc=cols-1;cc>=0;cc--){
+      for(let h2=0;h2<heights[r][cc];h2++){
+        const q=iso(cc,r,h2);
+        g.beginPath();g.moveTo(q.x,q.y-S2*0.56);g.lineTo(q.x+S2*1.05,q.y);
+        g.lineTo(q.x,q.y+S2*0.56);g.lineTo(q.x-S2*1.05,q.y);g.closePath();
+        g.fillStyle="#8fb6ff";g.fill();g.strokeStyle="#0a1029";g.lineWidth=2;g.stroke();
+        g.beginPath();g.moveTo(q.x-S2*1.05,q.y);g.lineTo(q.x,q.y+S2*0.56);
+        g.lineTo(q.x,q.y+S2*1.48);g.lineTo(q.x-S2*1.05,q.y+S2*0.92);g.closePath();
+        g.fillStyle="#3d6bcf";g.fill();g.stroke();
+        g.beginPath();g.moveTo(q.x+S2*1.05,q.y);g.lineTo(q.x,q.y+S2*0.56);
+        g.lineTo(q.x,q.y+S2*1.48);g.lineTo(q.x+S2*1.05,q.y+S2*0.92);g.closePath();
+        g.fillStyle="#24468f";g.fill();g.stroke();
+      }
+    }
+    /* ตัวเลือกคำตอบ */
+    const cands=[total];
+    while(cands.length<5){const v=total+P([-3,-2,-1,1,2,3]);if(v>0&&!cands.includes(v))cands.push(v);}
+    for(let i=cands.length-1;i>0;i--){const j=RI(0,i);const x=cands[i];cands[i]=cands[j];cands[j]=x;}
+    const ai=cands.indexOf(total);
+    const bw=W/5, by=H-92;
+    cands.forEach((v,i)=>{
+      const x=bw*i+bw/2;
+      rr(g,x-58,by-40,116,80,14);
+      g.fillStyle="rgba(18,28,66,.9)";g.fill();
+      g.strokeStyle="rgba(255,210,63,.5)";g.lineWidth=3;g.stroke();
+      g.fillStyle="#ffd23f";g.font="800 38px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";g.fillText(String(v),x,by);
+    });
+    g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
+    g.fillText("ฐานเป็นตาราง 4×4 ทุกกองวางชิดกันตั้งแต่พื้น ไม่มีก้อนลอย",W/2,44);
+    return {t:"กองลูกบาศก์ 4×4 นี้มีก้อนที่ถูกบังจนมองไม่เห็นอยู่ด้วย — รวมทั้งหมดมีกี่ก้อน (วงตัวเลือกที่ถูก)",
+      ans:ans(bw*ai+bw/2,by,58),c};
+  }},
+
+  /* S3 · ผังท่อน้ำมีวาล์ว — เปิดวาล์วตามที่บอก น้ำไปโผล่ถังไหน */
+  {id:"pipes", make(d){
+    const {c,g}=base(d);
+    const LV=4, tanks=LV+1;
+    const topY=110, gapY=(H-280)/LV;
+    const tw=(W-160)/tanks;
+    const valves=[];
+    for(let l=0;l<LV;l++){valves.push([]);for(let k=0;k<=l;k++)valves[l].push(P([0,1]));}
+    let pos=0;
+    for(let l=0;l<LV;l++)pos+=valves[l][pos];
+    const nodeX=(l,k)=>W/2+(k-l/2)*tw*0.86;
+    const tankX=k=>80+k*tw+tw/2;
+    /* ท่อ */
+    g.lineCap="round";
+    for(let l=0;l<LV;l++)for(let k=0;k<=l;k++){
+      const x=nodeX(l,k), y=topY+l*gapY;
+      [0,1].forEach(dir=>{
+        const x2=(l+1<LV)?nodeX(l+1,k+dir):tankX(k+dir);
+        const y2=(l+1<LV)?topY+(l+1)*gapY:H-160;
+        g.strokeStyle="rgba(140,180,255,.32)";g.lineWidth=13;
+        g.beginPath();g.moveTo(x,y);g.lineTo(x2,y2);g.stroke();
+      });
+    }
+    /* วาล์ว: ลูกศรชี้ทางที่เปิด */
+    for(let l=0;l<LV;l++)for(let k=0;k<=l;k++){
+      const x=nodeX(l,k), y=topY+l*gapY, v=valves[l][k];
+      g.fillStyle="#101a3c";g.beginPath();g.arc(x,y,26,0,TAU);g.fill();
+      g.strokeStyle="#ffd23f";g.lineWidth=4;g.stroke();
+      g.save();g.translate(x,y);g.rotate(v?0.85:-0.85);
+      g.strokeStyle="#35e07a";g.lineWidth=7;g.lineCap="round";
+      g.beginPath();g.moveTo(0,-4);g.lineTo(0,22);g.stroke();
+      g.beginPath();g.moveTo(-9,12);g.lineTo(0,24);g.lineTo(9,12);g.stroke();
+      g.restore();
+    }
+    /* ถัง */
+    for(let k=0;k<tanks;k++){
+      const x=tankX(k), y=H-160;
+      g.fillStyle="rgba(18,28,66,.9)";g.fillRect(x-tw*0.34,y,tw*0.68,110);
+      g.strokeStyle="rgba(140,180,255,.55)";g.lineWidth=4;
+      g.strokeRect(x-tw*0.34,y,tw*0.68,110);
+      g.fillStyle="#ffd23f";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";g.fillText("ถัง "+(k+1),x,y+130);
+    }
+    /* น้ำเข้าด้านบน */
+    g.fillStyle="#41c7ff";g.fillRect(W/2-9,44,18,topY-70);
+    g.fillStyle="#8fe3ff";g.font="700 22px Kanit,sans-serif";
+    g.textAlign="center";g.textBaseline="middle";g.fillText("น้ำเข้า",W/2,32);
+    g.fillStyle="#9db4dd";g.font="600 21px Kanit,sans-serif";
+    g.fillText("ลูกศรเขียวในวาล์วชี้ไปทางไหน น้ำไหลไปทางนั้น",W/2,H-24);
+    return {t:"น้ำไหลเข้าจากด้านบนแล้วผ่านวาล์วทีละชั้นตามทิศลูกศร — สุดท้ายน้ำจะไปลงถังไหน",
+      ans:ans(tankX(pos),H-110,Math.min(58,tw*0.30)),c};
+  }}
+  ];
+
   let BAG=[], BAGH=[];
   function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
   function draw1(pool,bagRef,avoid){
@@ -3618,7 +3765,7 @@ const QG = (()=>{
     const useHard = true;
     /* ★ ถอดโหมดที่เป็นแค่การนับ/กวาดตาออก เหลือเฉพาะที่ต้องคิดวิเคราะห์จริง */
     const DROP=["polyseq","isocube","matrixdots","sortorder","mazegap","arrowpath"];
-    const POOLH = HARD.concat(BRUTAL,DEEP,KNOW).filter(o=>DROP.indexOf(o.id)<0);
+    const POOLH = HARD.concat(BRUTAL,DEEP,KNOW,NEWS).filter(o=>DROP.indexOf(o.id)<0);
     const o=draw1(POOLH,_bagH,avoid);
     const r=o.make(d);
     const stars = d<.55?"⭐⭐⭐⭐":"⭐⭐⭐⭐⭐";
@@ -3628,7 +3775,7 @@ const QG = (()=>{
       ans:r.ans};
   }
   const _DROP=["polyseq","isocube","matrixdots","sortorder","mazegap","arrowpath"];
-  const _ALL=HARD.concat(BRUTAL,DEEP,KNOW).filter(o=>_DROP.indexOf(o.id)<0);
+  const _ALL=HARD.concat(BRUTAL,DEEP,KNOW,NEWS).filter(o=>_DROP.indexOf(o.id)<0);
   return {make, modes:_ALL.length, easyModes:OBJ.length, hardModes:_ALL.length,
     list:HARD.map(o=>o.id).concat(BRUTAL.map(o=>o.id),DEEP.map(o=>o.id),KNOW.map(o=>o.id))};
 })();
@@ -3667,6 +3814,20 @@ const QGA = (()=>{
     const cw=(W-pad*2)/cols, ch=(H-pad*2)/rows;
     return {cx:pad+(i%cols)*cw+cw/2, cy:pad+Math.floor(i/cols)*ch+ch/2, cw, ch};
   };
+
+  /* เวลาจำลอง: ช่วงแรกเหมือนคลิปโจทย์เป๊ะ ๆ จากนั้นค่อยเดินต่อจนถึงเวลาที่ถาม */
+  function simTime(t,rev,shownT,askT){
+    if(!rev)return Math.min(t,shownT);
+    if(t<=shownT)return t;
+    return shownT+((t-shownT)/Math.max(0.001,DUR-shownT))*(askT-shownT);
+  }
+  /* ความทึบของม่าน: คลิปโจทย์ = ปิดค้าง · คลิปเฉลย = ปิดแวบหนึ่งแล้วเปิดออก */
+  function coverA(t,rev,shownT){
+    if(t<=shownT)return 0;
+    const inA=Math.min(1,(t-shownT)/0.42);
+    if(!rev)return inA;
+    return inA*Math.max(0,1-Math.max(0,(t-shownT-0.62))/0.55);
+  }
 
   const MODES=[
 
@@ -3971,13 +4132,14 @@ const QGA = (()=>{
       const gr=g.createLinearGradient(0,0,W*.35,H);
       gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
       g.fillStyle=gr;g.fillRect(0,0,W,H);
-      const simT = isReveal ? (t/DUR)*askT : Math.min(t,shownT);
+      const simT = simTime(t,isReveal,shownT,askT);
       tap(g,t);
       water(g,lvlAt(simT),t);
       shell(g);
       /* ม่านบังหลังหมดช่วงที่ให้ดู */
-      if(!isReveal && t>shownT){
-        const a=Math.min(1,(t-shownT)/0.45);
+      const covA=coverA(t,isReveal,shownT);
+      if(covA>0.004){
+        const a=covA;
         g.save();g.globalAlpha=a;
         g.fillStyle="rgba(6,10,26,.97)";g.fillRect(bx-6,by-6,bw+12,bh+12);
         g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(bx-6,by-6,bw+12,bh+12);
@@ -3988,7 +4150,7 @@ const QGA = (()=>{
         g.fillText("ถูกบังไว้แล้ว",W/2,by+bh/2+34);
         g.restore();
         /* ยังเห็นสเกลอยู่ ให้เล็งได้ */
-        g.save();g.globalAlpha=0.9;
+        g.save();g.globalAlpha=0.9*a;
         for(let k=0;k<=10;k++){
           const y=yOf(k*10);
           g.strokeStyle=k%5===0?"rgba(255,210,63,.9)":"rgba(200,225,255,.5)";
@@ -4044,7 +4206,7 @@ const QGA = (()=>{
         g.fillStyle="#ffd23f";g.font="700 20px Kanit,sans-serif";
         g.textAlign="center";g.textBaseline="top";g.fillText(k*10+"%",x,laneY+102);
       }
-      const simT=isReveal?(t/DUR)*askT:Math.min(t,shownT);
+      const simT=simTime(t,isReveal,shownT,askT);
       const q=posAt(simT);
       /* รถ */
       const cx=xOf(q);
@@ -4055,9 +4217,9 @@ const QGA = (()=>{
       g.beginPath();g.arc(-20,22,11,0,Math.PI*2);g.fill();
       g.beginPath();g.arc(20,22,11,0,Math.PI*2);g.fill();
       g.restore();
-      if(!isReveal&&t>shownT){
-        const a=Math.min(1,(t-shownT)/0.45);
-        g.save();g.globalAlpha=a;
+      const covA=coverA(t,isReveal,shownT);
+      if(covA>0.004){
+        g.save();g.globalAlpha=covA;
         g.fillStyle="rgba(6,10,26,.97)";g.fillRect(x0-32,laneY-72,x1-x0+64,144);
         g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(x0-32,laneY-72,x1-x0+64,144);
         g.fillStyle="#ffd23f";g.font="800 40px Kanit,sans-serif";
@@ -4307,6 +4469,7 @@ const QGA = (()=>{
         g.beginPath();g.moveTo(x,groundY);g.lineTo(x,groundY+16);g.stroke();
       }
       /* หากระโดดที่ i ณ เวลา t */
+      const covA2=coverA(t,rev,showHops*hopT);
       const maxHop=rev?9:showHops;
       let px=x0, py=groundY, hops=0, cur=d1;
       let acc=t;
@@ -4330,9 +4493,8 @@ const QGA = (()=>{
         g.fillText("กระโดดที่ "+(i+1),sx+sd/2,groundY+60);
         sx+=sd;sd*=ratio;
       }
-      if(!rev&&t>showHops*hopT){
-        const a=Math.min(1,(t-showHops*hopT)/0.4);
-        g.save();g.globalAlpha=a;
+      if(covA2>0.004){
+        g.save();g.globalAlpha=covA2;
         g.fillStyle="rgba(6,10,26,.96)";g.fillRect(x0+d1+d1*ratio-10,groundY-230,W-(x0+d1+d1*ratio)+10,300);
         g.strokeStyle="#ffd23f";g.lineWidth=5;
         g.strokeRect(x0+d1+d1*ratio-10,groundY-230,W-(x0+d1+d1*ratio)+10,300);
@@ -4340,7 +4502,7 @@ const QGA = (()=>{
         g.fillText("? ? ?",(x0+d1+d1*ratio+W)/2,groundY-90);
         g.restore();
       }
-      if(!(!rev&&px>x0+d1+d1*ratio-10&&t>showHops*hopT)){
+      if(!(covA2>0.985&&px>x0+d1+d1*ratio-10)){
         g.fillStyle="#ff5c76";g.shadowColor="#ff5c76";g.shadowBlur=18;
         g.beginPath();g.arc(px,py-18,18,0,Math.PI*2);g.fill();g.shadowBlur=0;
       }
@@ -4385,18 +4547,22 @@ const QGA = (()=>{
         g.font="800 24px Kanit,sans-serif";g.textAlign="center";g.textBaseline="middle";
         g.fillText(String(i+1),x,y);
       }
-      const simT=rev?(t/DUR)*askT:Math.min(t,shownT);
+      const simT=simTime(t,rev,shownT,askT);
+      const covA=coverA(t,rev,shownT);
       const a=slotA(startSlot)+revPerSec*simT*Math.PI*2;
-      if(rev||t<=shownT){
+      if(covA<0.985){
         g.save();g.translate(cx,cy);g.rotate(a);
         g.strokeStyle="#ff5c76";g.lineWidth=9;g.lineCap="round";
         g.shadowColor="#ff5c76";g.shadowBlur=18;
         g.beginPath();g.moveTo(0,0);g.lineTo(Rr-44,0);g.stroke();g.restore();
-      }else{
+      }
+      if(covA>0.004){
+        g.save();g.globalAlpha=covA;
         g.fillStyle="rgba(6,10,26,.96)";g.beginPath();g.arc(cx,cy,Rr-42,0,Math.PI*2);g.fill();
         g.strokeStyle="#ffd23f";g.lineWidth=5;g.stroke();
         g.fillStyle="#ffd23f";g.font="800 44px Kanit,sans-serif";
         g.textAlign="center";g.textBaseline="middle";g.fillText("? ? ?",cx,cy);
+        g.restore();
       }
       g.fillStyle="#8fb6ff";g.beginPath();g.arc(cx,cy,13,0,Math.PI*2);g.fill();
       g.fillStyle="#eaf3ff";g.font="700 26px Kanit,sans-serif";g.textAlign="left";g.textBaseline="alphabetic";
@@ -4425,13 +4591,14 @@ const QGA = (()=>{
       g.fillStyle=gr;g.fillRect(0,0,W,H);
       g.strokeStyle="rgba(255,210,63,.4)";g.lineWidth=5;
       g.beginPath();g.moveTo(40,baseY);g.lineTo(W-40,baseY);g.stroke();
-      const simT=rev?(t/DUR)*askT:Math.min(t,shownT);
+      const simT=simTime(t,rev,shownT,askT);
+      const covA=coverA(t,rev,shownT);
       for(let i=0;i<N;i++){
         const x=ox+i*sp;
         const fallT=i*per;
         let ang=0;
         if(simT>fallT)ang=Math.min(1,(simT-fallT)/per)*1.35;
-        const hidden=!rev&&simT>=shownT&&x>ox+(shownT/per)*sp+30;
+        const hidden=covA>0.985&&x>ox+(shownT/per)*sp+30;
         if(hidden)continue;
         g.save();g.translate(x,baseY);g.rotate(ang);
         g.fillStyle=(rev&&i===endIdx)?"#35e07a":"#cfd8ea";
@@ -4441,9 +4608,9 @@ const QGA = (()=>{
         g.fillStyle="#6f83ac";g.font="600 17px Kanit,sans-serif";
         g.textAlign="center";g.textBaseline="top";g.fillText(String(i+1),x,baseY+12);
       }
-      if(!rev&&simT>=shownT){
+      if(covA>0.004){
         const cx0=ox+(shownT/per)*sp+30;
-        g.save();g.globalAlpha=Math.min(1,(t-shownT)/0.4);
+        g.save();g.globalAlpha=covA;
         g.fillStyle="rgba(6,10,26,.96)";g.fillRect(cx0,baseY-190,W-cx0-20,220);
         g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(cx0,baseY-190,W-cx0-20,220);
         g.fillStyle="#ffd23f";g.font="800 40px Kanit,sans-serif";
@@ -4476,7 +4643,7 @@ const QGA = (()=>{
       const gr=g.createLinearGradient(0,0,W*.35,H);
       gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
       g.fillStyle=gr;g.fillRect(0,0,W,H);
-      const simT=rev?(t/DUR)*(meetT*1.15):Math.min(t,shownT);
+      const simT=simTime(t,rev,shownT,meetT*1.12);
       [[ax,sA,rA,"A","#7fe0ff"],[bx2,sB,rB,"B","#ffd27f"]].forEach(([x,s0,r0,nm,col])=>{
         const L2=Math.min(100,s0+r0*simT);
         const y=yOf(L2);
@@ -4497,9 +4664,9 @@ const QGA = (()=>{
         if(k%5===0){g.fillStyle="#ffd23f";g.font="700 20px Kanit,sans-serif";
           g.textAlign="center";g.textBaseline="middle";g.fillText(k*10+"%",W/2,y-16);}
       }
-      if(!rev&&t>shownT){
-        const a=Math.min(1,(t-shownT)/0.45);
-        g.save();g.globalAlpha=a;
+      const covA=coverA(t,rev,shownT);
+      if(covA>0.004){
+        g.save();g.globalAlpha=covA;
         [[ax],[bx2]].forEach(([x])=>{
           g.fillStyle="rgba(6,10,26,.97)";g.fillRect(x-6,by-6,bw+12,bh+12);
           g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(x-6,by-6,bw+12,bh+12);
@@ -4521,6 +4688,703 @@ const QGA = (()=>{
     };
     return {t:"ถัง A เริ่มสูงกว่าแต่เติมช้า ถัง B เริ่มต่ำกว่าแต่เติมเร็ว (ดูได้ 2 วินาทีแรกก่อนถูกบัง) — ทั้งสองถังจะมีระดับเท่ากันที่ระดับกี่เปอร์เซ็นต์ วงตรงระดับนั้นบนสเกลกลาง",
       ans:{x:(W/2)/W, y:yOf(meetL)/W, r:0.050},
+      draw:build(false), drawReveal:build(true)};
+  }}
+  ];
+
+  /* ================= 🔬 ชุดใหม่: ฟิสิกส์ · ตรรกะ · ความจำ ================= */
+  const NEWA=[
+
+  /* N1 · ยิงกระสุนวิถีโค้ง — เห็นแค่ช่วงขึ้น ทำนายจุดตก */
+  {id:"cannon", build(){
+    const gy=H-140, x0=90;
+    const v=R(300,430), ang=R(0.72,1.15), gAcc=520;
+    const flight=2*v*Math.sin(ang)/gAcc;
+    const land=x0+v*Math.cos(ang)*flight;
+    const apexT=flight/2;
+    const shownT=apexT*0.72;                       // บังก่อนถึงจุดสูงสุด
+    const pos=tt=>({x:x0+v*Math.cos(ang)*tt, y:gy-(v*Math.sin(ang)*tt-0.5*gAcc*tt*tt)});
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      g.strokeStyle="rgba(255,210,63,.5)";g.lineWidth=5;
+      g.beginPath();g.moveTo(40,gy);g.lineTo(W-40,gy);g.stroke();
+      for(let k=0;k<=10;k++){const x=90+k*((W-180)/10);
+        g.strokeStyle="rgba(200,225,255,.4)";g.lineWidth=2;
+        g.beginPath();g.moveTo(x,gy);g.lineTo(x,gy+18);g.stroke();
+        g.fillStyle="#ffd23f";g.font="700 19px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="top";g.fillText(String(k*10),x,gy+24);}
+      g.save();g.translate(x0,gy);g.rotate(-ang);
+      g.fillStyle="#8a97b8";g.fillRect(-14,-20,86,40);g.restore();
+      const simT=simTime(t,rev,shownT,flight*1.02);
+      const covA=coverA(t,rev,shownT);
+      /* รอยวิถีที่เห็นแล้ว */
+      g.strokeStyle="rgba(255,92,118,.5)";g.lineWidth=4;g.setLineDash([9,8]);
+      g.beginPath();
+      for(let k=0;k<=40;k++){const tt=simT*k/40;const q=pos(tt);
+        k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y);}
+      g.stroke();g.setLineDash([]);
+      const cur=pos(Math.min(simT,flight));
+      g.fillStyle="#ff5c76";g.shadowColor="#ff5c76";g.shadowBlur=20;
+      g.beginPath();g.arc(cur.x,cur.y,15,0,Math.PI*2);g.fill();g.shadowBlur=0;
+      if(covA>0.004){
+        const cx0=pos(shownT).x+40;
+        g.save();g.globalAlpha=covA;
+        g.fillStyle="rgba(6,10,26,.97)";g.fillRect(cx0,0,W-cx0,gy-4);
+        g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(cx0,0,W-cx0,gy-4);
+        g.fillStyle="#ffd23f";g.font="800 44px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("? ? ?",(cx0+W)/2,gy/2);
+        g.restore();
+      }
+      if(rev&&simT>=flight*0.98){
+        g.strokeStyle="#35e07a";g.lineWidth=5;g.setLineDash([14,10]);
+        g.beginPath();g.moveTo(land,gy-260);g.lineTo(land,gy+26);g.stroke();g.setLineDash([]);
+      }
+    };
+    return {t:"ปืนใหญ่ยิงกระสุน เห็นแค่ช่วงพุ่งขึ้นก่อนถูกบัง — กระสุนจะตกลงพื้นตรงไหน (ใช้สเกลด้านล่างช่วยเล็ง)",
+      ans:{x:land/W, y:(gy-14)/W, r:0.046}, draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N2 · ลูกตุ้มนิวตัน — ปล่อยกี่ลูก อีกฝั่งกระเด็นเท่านั้น */
+  {id:"newton", build(){
+    const N=6, sp=96, ox=W/2-(N-1)*sp/2, topY=110, len=250;
+    const drop=RI(1,3);                              // ปล่อยกี่ลูก
+    const ansIdx=N-drop;                             // ลูกซ้ายสุดของฝั่งที่กระเด็น
+    const per=1.0;
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      g.strokeStyle="rgba(255,210,63,.45)";g.lineWidth=8;
+      g.beginPath();g.moveTo(ox-70,topY);g.lineTo(ox+(N-1)*sp+70,topY);g.stroke();
+      const ph=(t/per)%1;
+      const sw=Math.sin(ph*Math.PI*2);
+      for(let i=0;i<N;i++){
+        let a=0;
+        if(i<drop&&sw<0)a=sw*0.55;                   // ฝั่งซ้ายเหวี่ยงเข้า
+        if(i>=N-drop&&sw>0)a=sw*0.55;                // ฝั่งขวากระเด็นออก
+        const px=ox+i*sp;
+        const bx=px+Math.sin(a)*len, by=topY+Math.cos(a)*len;
+        g.strokeStyle="rgba(200,220,255,.55)";g.lineWidth=3;
+        g.beginPath();g.moveTo(px,topY);g.lineTo(bx,by);g.stroke();
+        const hot=rev&&(i>=N-drop);
+        g.beginPath();g.arc(bx,by,40,0,Math.PI*2);
+        const bg=g.createRadialGradient(bx-14,by-14,6,bx,by,40);
+        bg.addColorStop(0,hot?"#c9ffe0":"#f2f6ff");
+        bg.addColorStop(1,hot?"#1fb765":"#7d8aa8");
+        g.fillStyle=bg;g.fill();
+        g.strokeStyle=hot?"#35e07a":"rgba(0,0,0,.35)";g.lineWidth=hot?6:3;g.stroke();
+        g.fillStyle="#6f83ac";g.font="700 20px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";
+        g.fillText(String(i+1),px,topY+len+70);
+      }
+      g.fillStyle="#eaf3ff";g.font="700 27px Kanit,sans-serif";g.textAlign="center";
+      g.fillText("ปล่อยจากฝั่งซ้าย "+drop+" ลูก",W/2,58);
+    };
+    return {t:"ลูกตุ้มนิวตัน 6 ลูก ปล่อยจากฝั่งซ้าย "+drop+" ลูก — ฝั่งขวาจะกระเด็นออกกี่ลูก และลูกซ้ายสุดของกลุ่มที่กระเด็นคือลูกไหน (วงลูกนั้น)",
+      ans:{x:(ox+ansIdx*sp)/W, y:(topY+len)/W, r:0.052}, draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N3 · รางลูกแก้วแยกทาง (Galton switch) */
+  {id:"marble", build(){
+    const LV=4, holes=LV+1;
+    const topY=120, gapY=(H-300)/LV;
+    const hw=(W-200)/holes;
+    const swt=[];                                    // สวิตช์แต่ละชั้น
+    for(let l=0;l<LV;l++){swt.push([]);for(let k=0;k<=l;k++)swt[l].push(P([0,1]));}
+    let pos=0;const path=[0];
+    for(let l=0;l<LV;l++){pos+=swt[l][pos];path.push(pos);}
+    const nodeX=(l,k)=>W/2+(k-l/2)*hw;
+    const holeX=k=>100+k*hw+hw/2;
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      /* สวิตช์ */
+      for(let l=0;l<LV;l++)for(let k=0;k<=l;k++){
+        const x=nodeX(l,k), y=topY+l*gapY;
+        g.save();g.translate(x,y);g.rotate(swt[l][k]?0.62:-0.62);
+        g.fillStyle="#ffd23f";g.fillRect(-42,-8,84,16);
+        g.strokeStyle="rgba(0,0,0,.4)";g.lineWidth=2;g.strokeRect(-42,-8,84,16);
+        g.restore();
+        g.fillStyle="#5b6a90";g.beginPath();g.arc(x,y,7,0,Math.PI*2);g.fill();
+      }
+      /* รู */
+      for(let k=0;k<holes;k++){
+        const x=holeX(k), y=H-110;
+        g.fillStyle=(rev&&k===pos)?"rgba(53,224,122,.3)":"rgba(18,28,66,.9)";
+        g.fillRect(x-hw/2+8,y-40,hw-16,90);
+        g.strokeStyle=(rev&&k===pos)?"#35e07a":"rgba(140,180,255,.5)";
+        g.lineWidth=(rev&&k===pos)?7:4;g.strokeRect(x-hw/2+8,y-40,hw-16,90);
+        g.fillStyle=(rev&&k===pos)?"#35e07a":"#ffd23f";
+        g.font="800 34px Kanit,sans-serif";g.textAlign="center";g.textBaseline="middle";
+        g.fillText(String(k+1),x,y+16);
+      }
+      /* ลูกแก้ว */
+      const q=Math.min(1,t/(DUR-0.6));
+      const seg=q*LV;
+      const l=Math.min(LV-1,Math.floor(seg)), f=seg-Math.floor(seg);
+      let bx,by;
+      if(seg>=LV){bx=holeX(pos);by=H-110;}
+      else{
+        const x1=nodeX(l,path[l]), y1=topY+l*gapY;
+        const x2=(l+1<LV)?nodeX(l+1,path[l+1]):holeX(pos);
+        const y2=(l+1<LV)?topY+(l+1)*gapY:H-150;
+        bx=x1+(x2-x1)*f;by=y1+(y2-y1)*f;
+      }
+      g.fillStyle="#41c7ff";g.shadowColor="#41c7ff";g.shadowBlur=24;
+      g.beginPath();g.arc(bx,by,18,0,Math.PI*2);g.fill();g.shadowBlur=0;
+      g.fillStyle="rgba(255,255,255,.6)";
+      g.beginPath();g.arc(bx-6,by-6,6,0,Math.PI*2);g.fill();
+      g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";g.textAlign="center";
+      g.fillText("แถบทองเอียงไปทางไหน ลูกแก้วจะไหลไปทางนั้น",W/2,62);
+    };
+    return {t:"ลูกแก้วกลิ้งลงผ่านสวิตช์เอียงทีละชั้น — สุดท้ายจะตกลงรูหมายเลขไหน",
+      ans:{x:holeX(pos)/W, y:(H-110)/W, r:0.055}, draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N4 · เงาจากดวงอาทิตย์ — เห็น 2 จังหวะ ทำนายตอน 15 นาฬิกา */
+  {id:"sundial", build(){
+    const gy=H-150, px=W/2-120, poleH=230;
+    const h0=9, hAsk=15;                             // 9 โมง → 15 นาฬิกา
+    const k=R(0.42,0.62);                            // อัตราเงายืดต่อชั่วโมง
+    const shadowLen=hr=>poleH*(k*(hr-6)/3);          // เที่ยง = สั้นสุดโดยประมาณ
+    const lenAt=hr=>Math.abs(poleH*k*(hr-12)/3)+34;
+    const tip=hr=>px+lenAt(hr)*(hr<12?-1:1);
+    const shownT=1.9;
+    const hrAt=tt=>h0+(hAsk-h0)*Math.min(1,tt/3.4);
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#12224f");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      g.fillStyle="rgba(120,150,90,.18)";g.fillRect(0,gy,W,H-gy);
+      g.strokeStyle="rgba(255,210,63,.5)";g.lineWidth=4;
+      g.beginPath();g.moveTo(0,gy);g.lineTo(W,gy);g.stroke();
+      for(let x=60;x<=W-60;x+=(W-120)/12){
+        g.strokeStyle="rgba(200,225,255,.3)";g.lineWidth=2;
+        g.beginPath();g.moveTo(x,gy);g.lineTo(x,gy+14);g.stroke();
+      }
+      const simT=simTime(t,rev,shownT,3.4);
+      const covA=coverA(t,rev,shownT);
+      const hr=hrAt(simT);
+      /* ดวงอาทิตย์ */
+      const sa=Math.PI*(1-(hr-6)/12);
+      const sx=W/2+Math.cos(sa)*430, sy=gy-Math.sin(sa)*330;
+      const sg=g.createRadialGradient(sx,sy,6,sx,sy,90);
+      sg.addColorStop(0,"rgba(255,240,180,.95)");sg.addColorStop(1,"rgba(255,210,63,0)");
+      g.fillStyle=sg;g.beginPath();g.arc(sx,sy,90,0,Math.PI*2);g.fill();
+      /* เงา */
+      const tx=tip(hr);
+      g.fillStyle="rgba(0,0,0,.6)";
+      g.beginPath();g.moveTo(px-14,gy);g.lineTo(px+14,gy);
+      g.lineTo(tx+10,gy+22);g.lineTo(tx-10,gy+22);g.closePath();g.fill();
+      /* เสา */
+      g.fillStyle="#cfd8ea";g.fillRect(px-13,gy-poleH,26,poleH);
+      g.strokeStyle="rgba(0,0,0,.4)";g.lineWidth=3;g.strokeRect(px-13,gy-poleH,26,poleH);
+      if(covA>0.004){
+        g.save();g.globalAlpha=covA;
+        g.fillStyle="rgba(6,10,26,.97)";g.fillRect(0,gy-16,W,H-gy+16);
+        g.strokeStyle="#ffd23f";g.lineWidth=5;g.strokeRect(0,gy-16,W,H-gy+16);
+        g.fillStyle="#ffd23f";g.font="800 38px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("? ? ?",W/2,gy+40);
+        g.restore();
+      }
+      g.fillStyle="#eaf3ff";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="left";g.textBaseline="alphabetic";
+      g.fillText(Math.round(hr)+".00 น.",60,64);
+      if(rev&&simT>=3.3){
+        g.strokeStyle="#35e07a";g.lineWidth=5;g.setLineDash([14,10]);
+        g.beginPath();g.moveTo(tip(hAsk),gy-260);g.lineTo(tip(hAsk),gy+40);g.stroke();g.setLineDash([]);
+      }
+    };
+    return {t:"เงาของเสาเคลื่อนตามดวงอาทิตย์ เห็นแค่ 2 จังหวะแรกก่อนถูกบัง — ตอน 15.00 น. ปลายเงาจะอยู่ตรงไหน",
+      ans:{x:tip(hAsk)/W, y:(gy+12)/W, r:0.048}, draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N5 · บันไดงู — ทอยหลายตา มีบันไดและงูซ้อน */
+  {id:"snakes", build(){
+    const N=6, cs=Math.min((H-190)/N,(W-260)/N);
+    const ox=W/2-N*cs/2, oy=80;
+    const idxOf=n2=>{const r=Math.floor(n2/N), c=(r%2===0)?(n2%N):(N-1-n2%N);
+      return {x:ox+c*cs+cs/2, y:oy+(N-1-r)*cs+cs/2};};
+    const JUMP={};
+    const used=new Set([0,N*N-1]);
+    for(let i=0;i<5;i++){                            // บันได
+      let a=RI(1,N*N-12),b=a+RI(6,13);
+      if(b>=N*N-1||used.has(a)||used.has(b))continue;
+      JUMP[a]={to:b,up:true};used.add(a);used.add(b);
+    }
+    for(let i=0;i<5;i++){                            // งู
+      let a=RI(12,N*N-2),b=a-RI(6,13);
+      if(b<1||used.has(a)||used.has(b))continue;
+      JUMP[a]={to:b,up:false};used.add(a);used.add(b);
+    }
+    const rolls=[];for(let i=0;i<5;i++)rolls.push(RI(1,6));
+    let cur=0;const steps=[0];
+    rolls.forEach(r=>{
+      cur=Math.min(N*N-1,cur+r);
+      steps.push(cur);
+      if(JUMP[cur]){cur=JUMP[cur].to;steps.push(cur);}
+    });
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      for(let i=0;i<N*N;i++){
+        const q=idxOf(i);
+        g.fillStyle=(i%2)?"rgba(22,32,74,.85)":"rgba(14,22,54,.85)";
+        g.fillRect(q.x-cs/2,q.y-cs/2,cs,cs);
+        g.strokeStyle="rgba(140,180,255,.25)";g.lineWidth=1.5;
+        g.strokeRect(q.x-cs/2,q.y-cs/2,cs,cs);
+        g.fillStyle="#6f83ac";g.font="600 16px Kanit,sans-serif";
+        g.textAlign="left";g.textBaseline="top";g.fillText(String(i+1),q.x-cs/2+5,q.y-cs/2+4);
+      }
+      Object.keys(JUMP).forEach(k2=>{
+        const a=idxOf(+k2), b=idxOf(JUMP[k2].to);
+        g.strokeStyle=JUMP[k2].up?"#35e07a":"#ff5c76";
+        g.lineWidth=8;g.lineCap="round";
+        g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
+        g.fillStyle=g.strokeStyle;
+        g.beginPath();g.arc(b.x,b.y,11,0,Math.PI*2);g.fill();
+      });
+      /* หมากเดิน */
+      const q0=Math.min(1,t/(DUR-0.5));
+      const si=Math.min(steps.length-1,Math.floor(q0*(steps.length-1)+0.0001));
+      const pcur=idxOf(steps[si]);
+      g.fillStyle="#ffd23f";g.shadowColor="#ffd23f";g.shadowBlur=24;
+      g.beginPath();g.arc(pcur.x,pcur.y,cs*0.28,0,Math.PI*2);g.fill();g.shadowBlur=0;
+      /* แถบลูกเต๋า */
+      g.fillStyle="#eaf3ff";g.font="800 26px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText("ทอยได้: "+rolls.join(" → "),W/2,H-42);
+      g.fillStyle="#9db4dd";g.font="600 19px Kanit,sans-serif";
+      g.fillText("เขียว = บันไดขึ้น · แดง = งูเลื้อยลง · เริ่มที่ช่อง 1",W/2,H-14);
+      if(rev){
+        const f=idxOf(cur);
+        g.strokeStyle="#35e07a";g.lineWidth=7;
+        g.strokeRect(f.x-cs/2,f.y-cs/2,cs,cs);
+      }
+    };
+    return {t:"เริ่มที่ช่อง 1 แล้วทอยตามลำดับที่แสดง เจอบันไดให้ขึ้น เจองูให้ลง — สุดท้ายหมากอยู่ช่องไหน",
+      ans:{x:idxOf(cur).x/W, y:idxOf(cur).y/W, r:Math.min(0.06,cs*0.42/W)},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N6 · โมดูลาร์ — ไฟวิ่งข้ามช่องรอบวง */
+  {id:"modular", build(){
+    const N=P([29,31,37]), step=P([5,7,8,11]), K=RI(9,15);
+    const start=RI(0,N-1);
+    const end=((start+step*K)%N+N)%N;
+    const cx=W/2, cy=H/2+18, Rr=Math.min(W,H)*0.37;
+    const posOf=i=>({x:cx+Math.cos(-Math.PI/2+i/N*Math.PI*2)*Rr,
+                     y:cy+Math.sin(-Math.PI/2+i/N*Math.PI*2)*Rr});
+    const shownT=1.6, shownSteps=3;
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const simSteps=rev?Math.floor((t/DUR)*K+0.001):Math.min(shownSteps,Math.floor(t/(shownT/shownSteps)));
+      const at=((start+step*simSteps)%N+N)%N;
+      for(let i=0;i<N;i++){
+        const q=posOf(i);
+        const on=(i===at);
+        const isAns=rev&&i===end;
+        g.beginPath();g.arc(q.x,q.y,15,0,Math.PI*2);
+        if(on){g.fillStyle="#ffd23f";g.shadowColor="#ffd23f";g.shadowBlur=26;g.fill();g.shadowBlur=0;}
+        else if(isAns){g.fillStyle="rgba(53,224,122,.5)";g.fill();
+          g.strokeStyle="#35e07a";g.lineWidth=5;g.stroke();}
+        else{g.fillStyle="rgba(255,210,63,.07)";g.fill();
+          g.strokeStyle="rgba(255,210,63,.3)";g.lineWidth=2;g.stroke();}
+        if(i%2===0){
+          g.fillStyle="#6f83ac";g.font="600 15px Kanit,sans-serif";
+          g.textAlign="center";g.textBaseline="middle";
+          const q2=posOf(i);
+          g.fillText(String(i+1),cx+(q2.x-cx)*1.13,cy+(q2.y-cy)*1.13);
+        }
+      }
+      g.fillStyle="#eaf3ff";g.font="800 30px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText("วง "+N+" ช่อง · ก้าวละ "+step+" ช่อง",cx,cy-26);
+      g.fillStyle="#ffd23f";g.font="800 26px Kanit,sans-serif";
+      g.fillText("ก้าวที่ "+simSteps+" / "+K,cx,cy+18);
+      g.fillStyle="#9db4dd";g.font="600 19px Kanit,sans-serif";
+      g.fillText("เริ่มที่ช่อง "+(start+1),cx,cy+52);
+      if(!rev&&t>shownT){
+        g.save();g.globalAlpha=Math.min(1,(t-shownT)/0.4);
+        g.fillStyle="rgba(255,210,63,.9)";g.font="800 24px Kanit,sans-serif";
+        g.fillText("ต่อไปคิดเอง…",cx,cy+92);g.restore();
+      }
+    };
+    return {t:"ไฟเริ่มที่ช่อง "+(start+1)+" ของวง "+N+" ช่อง แล้วกระโดดทีละ "+step+
+        " ช่องตามเข็มนาฬิกา (ดูตัวอย่าง 3 ก้าวแรก) — ครบ "+K+" ก้าวไฟจะอยู่ช่องไหน",
+      ans:{x:posOf(end).x/W, y:posOf(end).y/W, r:0.042},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N7 · ของหายไปจากฉาก */
+  {id:"vanish", build(){
+    const N=RI(26,34);
+    const SH=["circle","square","tri","star","hex"];
+    const COLS=["#ff5c76","#ffd23f","#41c7ff","#35e07a","#a97bff","#ff9a3c"];
+    const items=[];
+    for(let i=0;i<N;i++){
+      let x,y,tryi=0;
+      do{x=R(90,W-90);y=R(110,H-90);tryi++;}
+      while(tryi<40&&items.some(o=>Math.hypot(o.x-x,o.y-y)<78));
+      items.push({x,y,s:P(SH),c:P(COLS),r:R(22,34),rot:R(0,6.28)});
+    }
+    const oi=RI(0,N-1);
+    const drawItem=(g,o)=>{
+      g.save();g.translate(o.x,o.y);g.rotate(o.rot);
+      g.fillStyle=o.c;g.strokeStyle="rgba(0,0,0,.4)";g.lineWidth=3;
+      g.beginPath();
+      if(o.s==="circle")g.arc(0,0,o.r,0,Math.PI*2);
+      else if(o.s==="square")g.rect(-o.r,-o.r,o.r*2,o.r*2);
+      else if(o.s==="tri"){g.moveTo(0,-o.r);g.lineTo(o.r,o.r*0.8);g.lineTo(-o.r,o.r*0.8);g.closePath();}
+      else if(o.s==="hex"){for(let k=0;k<6;k++){const a=k/6*Math.PI*2;
+        k?g.lineTo(Math.cos(a)*o.r,Math.sin(a)*o.r):g.moveTo(Math.cos(a)*o.r,Math.sin(a)*o.r);}g.closePath();}
+      else{for(let k=0;k<10;k++){const a=-Math.PI/2+k/10*Math.PI*2, rr=k%2?o.r*0.45:o.r;
+        k?g.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):g.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);}g.closePath();}
+      g.fill();g.stroke();g.restore();
+    };
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      /* 0–1.6 วิ ฉากเต็ม · 1.6–2.0 มืดสนิท · 2.0 เป็นต้นไป ฉากใหม่ที่ขาดไป 1 ชิ้น */
+      const phase = t<1.6?0 : (t<2.0?1:2);
+      if(phase!==1){
+        items.forEach((o,i)=>{ if(phase===2&&i===oi)return; drawItem(g,o); });
+      }
+      if(phase===1){
+        g.fillStyle="#04060f";g.fillRect(0,0,W,H);
+        g.fillStyle="#ffd23f";g.font="800 40px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("…",W/2,H/2);
+      }
+      g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText(phase===2?"ฉากหลังจอมืด — มีของหายไป 1 ชิ้น":"จำฉากนี้ไว้ให้ดี",W/2,58);
+      if(rev&&phase===2){
+        g.save();g.globalAlpha=.45+.35*Math.sin(t*7);
+        drawItem(g,items[oi]);g.restore();
+        g.strokeStyle="#35e07a";g.lineWidth=6;
+        g.beginPath();g.arc(items[oi].x,items[oi].y,items[oi].r+22,0,Math.PI*2);g.stroke();
+      }
+    };
+    return {t:"จำฉากรก ๆ นี้ไว้ 1.6 วินาที จอจะมืดแล้วกลับมาใหม่โดยขาดของไป 1 ชิ้น — วงตรงตำแหน่งที่ของหายไป",
+      ans:{x:items[oi].x/W, y:items[oi].y/W, r:0.048},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N8 · ผังที่นั่งคอนเสิร์ต */
+  {id:"seatmap", build(){
+    const cols=8, rows=5;
+    const cw=(W-140)/cols, ch=(H-230)/rows, ox=70, oy=130;
+    const NAMES=["ก้อง","แพร","นิว","มิ้นท์","โบว์","ตูน","หญิง","เจ","ฟลุ๊ค","แนน",
+      "พีท","หมิว","อาร์ม","เจน","บาส","ปอ","ใหม่","ต้อม","น้ำ","ฝ้าย",
+      "กัน","เบล","โอ๊ต","ปุ๊ก","ริน","ท็อป","มาย","ณิช","ปั้น","เอิร์ธ",
+      "จูน","ก้อย","ตาล","พลอย","วิน","ซัน","แม็ก","อิน","ดิว","เพชร"];
+    const pool=NAMES.slice();
+    for(let i=pool.length-1;i>0;i--){const j=RI(0,i);const x=pool[i];pool[i]=pool[j];pool[j]=x;}
+    const seats=[];
+    for(let i=0;i<cols*rows;i++)seats.push(pool[i%pool.length]);
+    const oi=RI(0,cols*rows-1);
+    const target=seats[oi];
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      g.fillStyle="rgba(255,210,63,.16)";g.fillRect(W/2-220,58,440,44);
+      g.strokeStyle="rgba(255,210,63,.6)";g.lineWidth=3;g.strokeRect(W/2-220,58,440,44);
+      g.fillStyle="#ffd23f";g.font="800 26px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";g.fillText("เวที",W/2,80);
+      const show = t<2.0;
+      for(let i=0;i<cols*rows;i++){
+        const x=ox+(i%cols)*cw, y=oy+Math.floor(i/cols)*ch;
+        const isAns=rev&&i===oi;
+        g.fillStyle=isAns?"rgba(53,224,122,.28)":"rgba(18,28,66,.85)";
+        g.fillRect(x+4,y+4,cw-8,ch-8);
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.35)";
+        g.lineWidth=isAns?6:2;g.strokeRect(x+4,y+4,cw-8,ch-8);
+        if(show||isAns){
+          g.fillStyle=isAns?"#35e07a":"#eaf3ff";
+          g.font="700 21px Kanit,sans-serif";
+          g.fillText(seats[i],x+cw/2,y+ch/2);
+        }
+      }
+      g.fillStyle="#9db4dd";g.font="600 21px Kanit,sans-serif";
+      g.fillText(show?"จำผังที่นั่งไว้ 2 วินาที":"ชื่อถูกลบแล้ว — "+target+" นั่งตรงไหน",W/2,H-40);
+    };
+    return {t:"ผังที่นั่งจะโชว์ชื่อทุกคน 2 วินาทีแล้วลบทิ้ง — “"+target+"” นั่งที่นั่งไหน",
+      ans:{x:(ox+(oi%cols)*cw+cw/2)/W, y:(oy+Math.floor(oi/cols)*ch+ch/2)/W,
+        r:Math.min(0.055,cw*0.42/W)},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N9 · เส้นทางที่เดินผ่าน — ถามเมืองลำดับที่ 4 */
+  {id:"route", build(){
+    const N=RI(9,11);
+    const pts=[];
+    for(let i=0;i<N;i++){
+      let x,y,tryi=0;
+      do{x=R(110,W-110);y=R(140,H-120);tryi++;}
+      while(tryi<50&&pts.some(o=>Math.hypot(o.x-x,o.y-y)<150));
+      pts.push({x,y});
+    }
+    const order=[];const left=pts.map((_,i)=>i);
+    while(left.length){const k=RI(0,left.length-1);order.push(left.splice(k,1)[0]);}
+    const ASK=4;
+    const target=order[ASK-1];
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const q=Math.min(1,t/(DUR-0.5))*(order.length-1);
+      const seg=Math.floor(q), f=q-seg;
+      /* เส้นทางที่เดินผ่านแล้ว */
+      g.strokeStyle="rgba(65,199,255,.35)";g.lineWidth=4;g.setLineDash([10,8]);
+      g.beginPath();
+      for(let i=0;i<=Math.min(seg,order.length-1);i++){
+        const p=pts[order[i]];i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y);
+      }
+      g.stroke();g.setLineDash([]);
+      pts.forEach((p,i)=>{
+        const isAns=rev&&i===target;
+        g.beginPath();g.arc(p.x,p.y,26,0,Math.PI*2);
+        g.fillStyle=isAns?"rgba(53,224,122,.35)":"rgba(18,28,66,.9)";g.fill();
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.5)";
+        g.lineWidth=isAns?7:3;g.stroke();
+        g.fillStyle=isAns?"#35e07a":"#ffd23f";g.font="700 20px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("เมือง "+(i+1),p.x,p.y+50);
+      });
+      /* จุดเดิน */
+      const a=pts[order[Math.min(seg,order.length-1)]];
+      const b=pts[order[Math.min(seg+1,order.length-1)]];
+      const bx=a.x+(b.x-a.x)*f, by=a.y+(b.y-a.y)*f;
+      g.fillStyle="#ffd23f";g.shadowColor="#ffd23f";g.shadowBlur=26;
+      g.beginPath();g.arc(bx,by,17,0,Math.PI*2);g.fill();g.shadowBlur=0;
+      g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+      g.textAlign="center";g.fillText("นับลำดับเมืองที่จุดทองแวะผ่าน",W/2,52);
+    };
+    return {t:"จุดทองวิ่งแวะเมืองต่าง ๆ ตามลำดับ — เมืองที่แวะเป็นลำดับที่ "+ASK+" คือเมืองไหน",
+      ans:{x:pts[target].x/W, y:pts[target].y/W, r:0.050},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N10 · ป้ายทะเบียนวิ่งผ่าน */
+  {id:"plates", build(){
+    const SLOTS=6;
+    const sw=W/SLOTS, py=H-170;
+    const digit=RI(1,9);
+    const cars=[];
+    const N=RI(10,14);
+    for(let i=0;i<N;i++){
+      const last=(i===0)?digit:RI(0,9);
+      cars.push({t0:0.25+i*((DUR-1.4)/N), slot:RI(0,SLOTS-1),
+        plate:String(RI(1,9))+String(RI(0,9))+String(RI(0,9))+String(last),
+        col:P(["#ff5c76","#41c7ff","#ffd23f","#35e07a","#a97bff"])});
+    }
+    /* บังคับให้มีคันที่ลงท้าย digit เพียงคันเดียว */
+    cars.forEach((c,i)=>{ if(i>0&&c.plate.slice(-1)===String(digit))
+      c.plate=c.plate.slice(0,3)+String((digit+1)%10); });
+    const hero=cars[0];
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      g.fillStyle="rgba(20,30,70,.8)";g.fillRect(0,140,W,150);
+      g.strokeStyle="rgba(255,210,63,.35)";g.lineWidth=3;g.setLineDash([26,20]);
+      g.beginPath();g.moveTo(0,215);g.lineTo(W,215);g.stroke();g.setLineDash([]);
+      /* ช่องจอด */
+      for(let i=0;i<SLOTS;i++){
+        const x=sw*i;
+        const isAns=rev&&i===hero.slot;
+        g.fillStyle=isAns?"rgba(53,224,122,.22)":"rgba(18,28,66,.85)";
+        g.fillRect(x+10,py-30,sw-20,150);
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.45)";
+        g.lineWidth=isAns?7:3;g.strokeRect(x+10,py-30,sw-20,150);
+        g.fillStyle=isAns?"#35e07a":"#ffd23f";g.font="800 32px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("ช่อง "+(i+1),x+sw/2,py+90);
+      }
+      cars.forEach(c=>{
+        const el=t-c.t0;if(el<0)return;
+        const road=0.9;
+        let cx,cy;
+        if(el<road){cx=-120+(W+240)*(el/road);cy=215;}
+        else{const q=Math.min(1,(el-road)/0.7);
+          cx=(-120+(W+240))*(1)*0+ (sw*c.slot+sw/2);
+          const fromX=W+120;
+          cx=fromX+(sw*c.slot+sw/2-fromX)*q;cy=215+(py+30-215)*q;}
+        g.save();g.translate(cx,cy);
+        g.fillStyle=c.col;g.fillRect(-52,-26,104,52);
+        g.fillStyle="rgba(255,255,255,.35)";g.fillRect(-24,-22,44,22);
+        g.fillStyle="#0d1330";
+        g.beginPath();g.arc(-28,28,12,0,Math.PI*2);g.fill();
+        g.beginPath();g.arc(28,28,12,0,Math.PI*2);g.fill();
+        g.fillStyle="#f2f6ff";g.fillRect(-36,4,72,20);
+        g.fillStyle="#0d1330";g.font="800 17px monospace";
+        g.textAlign="center";g.textBaseline="middle";g.fillText(c.plate,0,15);
+        g.restore();
+      });
+      g.fillStyle="#eaf3ff";g.font="800 28px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText("หาคันที่ทะเบียนลงท้ายด้วย "+digit,W/2,66);
+    };
+    return {t:"รถหลายคันวิ่งผ่านแล้วแยกเข้าช่องจอด — คันที่ทะเบียนลงท้ายด้วยเลข "+digit+" จอดช่องไหน",
+      ans:{x:(sw*hero.slot+sw/2)/W, y:(py+40)/W, r:0.062},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N11 · แฟลชการ์ด — โชว์ 1 วิแล้วดับหมด */
+  {id:"flash", build(){
+    const cols=6, rows=4, n=cols*rows;
+    const cw=(W-120)/cols, ch=(H-200)/rows, ox=60, oy=120;
+    const ICONS=["★","●","▲","■","◆","✚","♥","♣","☀","☂","✈","☎"];
+    const pool=[];
+    for(let i=0;i<n;i++)pool.push(P(ICONS));
+    const oi=RI(0,n-1);
+    /* ให้ไอคอนเป้าหมายมีอันเดียวในภาพ */
+    const target=ICONS.find(ic=>pool.filter(x=>x===ic).length===1)||pool[oi];
+    const ti=pool.indexOf(target);
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const show=t<1.05;
+      for(let i=0;i<n;i++){
+        const x=ox+(i%cols)*cw, y=oy+Math.floor(i/cols)*ch;
+        const isAns=rev&&i===ti;
+        g.fillStyle=isAns?"rgba(53,224,122,.25)":"rgba(18,28,66,.8)";
+        g.fillRect(x+5,y+5,cw-10,ch-10);
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.3)";
+        g.lineWidth=isAns?6:2;g.strokeRect(x+5,y+5,cw-10,ch-10);
+        if(show||isAns){
+          g.fillStyle=isAns?"#35e07a":"#ffd23f";
+          g.font="700 "+Math.round(Math.min(cw,ch)*0.5)+"px serif";
+          g.textAlign="center";g.textBaseline="middle";
+          g.fillText(pool[i],x+cw/2,y+ch/2);
+        }
+      }
+      g.fillStyle="#9db4dd";g.font="600 24px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText(show?"จำให้ไว! เหลืออีกนิดเดียว":"ทุกช่องดับหมดแล้ว — "+target+" อยู่ช่องไหน",W/2,66);
+    };
+    return {t:"ผังสัญลักษณ์จะโชว์แค่ 1 วินาทีแล้วดับหมด — สัญลักษณ์ "+target+" อยู่ช่องไหน",
+      ans:{x:(ox+(ti%cols)*cw+cw/2)/W, y:(oy+Math.floor(ti/cols)*ch+ch/2)/W,
+        r:Math.min(0.058,cw*0.40/W)},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N12 · ลูกบอลในเขาวงกตหมุน */
+  {id:"tiltmaze", build(){
+    const LV=5, holes=4;
+    const topY=110, gapY=(H-290)/LV;
+    const hw=(W-180)/holes;
+    const pegs=[];
+    for(let l=0;l<LV;l++){pegs.push([]);for(let k=0;k<=l;k++)pegs[l].push(P([0,1]));}
+    let pos=0;
+    for(let l=0;l<LV;l++){pos+=pegs[l][Math.min(pos,l)];pos=Math.min(pos,holes-1);}
+    const holeX=k=>90+k*hw+hw/2;
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const tilt=Math.sin(t*1.2)*0.05;
+      g.save();g.translate(W/2,H/2);g.rotate(tilt);g.translate(-W/2,-H/2);
+      for(let l=0;l<LV;l++)for(let k=0;k<=l;k++){
+        const x=W/2+(k-l/2)*(hw*0.8), y=topY+l*gapY;
+        g.save();g.translate(x,y);g.rotate(pegs[l][k]?0.55:-0.55);
+        g.fillStyle="#8fb6ff";g.fillRect(-38,-7,76,14);g.restore();
+      }
+      for(let k=0;k<holes;k++){
+        const x=holeX(k), y=H-120;
+        const isAns=rev&&k===pos;
+        g.fillStyle=isAns?"rgba(53,224,122,.3)":"rgba(10,16,41,.95)";
+        g.beginPath();g.ellipse(x,y,hw*0.32,26,0,0,Math.PI*2);g.fill();
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.55)";
+        g.lineWidth=isAns?7:4;g.stroke();
+        g.fillStyle=isAns?"#35e07a":"#ffd23f";g.font="800 30px Kanit,sans-serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText("รู "+(k+1),x,y+58);
+      }
+      const q=Math.min(1,t/(DUR-0.5));
+      let cx,cy;
+      const l=Math.min(LV-1,Math.floor(q*LV));
+      if(q>=1-1e-6){cx=holeX(pos);cy=H-120;}
+      else{
+        let pp=0;for(let i=0;i<l;i++){pp+=pegs[i][Math.min(pp,i)];pp=Math.min(pp,holes-1);}
+        const f=q*LV-l;
+        const x1=W/2+(Math.min(pp,l)-l/2)*(hw*0.8);
+        let pp2=pp+pegs[l][Math.min(pp,l)];pp2=Math.min(pp2,holes-1);
+        const x2=(l+1<LV)?W/2+(Math.min(pp2,l+1)-(l+1)/2)*(hw*0.8):holeX(pos);
+        cx=x1+(x2-x1)*f;cy=topY+l*gapY+gapY*f;
+      }
+      g.fillStyle="#ff5c76";g.shadowColor="#ff5c76";g.shadowBlur=22;
+      g.beginPath();g.arc(cx,cy,17,0,Math.PI*2);g.fill();g.shadowBlur=0;
+      g.restore();
+      g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText("กระดานเอียงไปมา ลูกไหลตามแถบที่เอียง",W/2,56);
+    };
+    return {t:"ลูกบอลกลิ้งลงกระดานที่เอียงไปมา ตกตามแถบที่ขวางอยู่ — สุดท้ายจะตกลงรูไหน",
+      ans:{x:holeX(pos)/W, y:(H-120)/W, r:0.058},
+      draw:build(false), drawReveal:build(true)};
+  }},
+
+  /* N13 · หมุนวัตถุ 3 มิติ — ทายหน้าที่ซ่อนอยู่ */
+  {id:"rot3d", build(){
+    const SYM=["●","▲","■","★","✚","◆"];
+    const faces=[];const pool=SYM.slice();
+    for(let i=0;i<4;i++){const k=RI(0,pool.length-1);faces.push(pool.splice(k,1)[0]);}
+    const hidden=faces[3];                             // หน้าที่ไม่เคยหันมา
+    const cands=[hidden];
+    while(cands.length<4){const c=P(SYM);if(!cands.includes(c))cands.push(c);}
+    for(let i=cands.length-1;i>0;i--){const j=RI(0,i);const x=cands[i];cands[i]=cands[j];cands[j]=x;}
+    const ansIdx=cands.indexOf(hidden);
+    const cw=W/4, cy2=H-110;
+    const build=(rev)=>function(g,t){
+      const gr=g.createLinearGradient(0,0,W*.35,H);
+      gr.addColorStop(0,"#0e1836");gr.addColorStop(.55,"#0a1029");gr.addColorStop(1,"#06091c");
+      g.fillStyle=gr;g.fillRect(0,0,W,H);
+      const cx=W/2, cy=H/2-70, S2=120;
+      /* หมุนโชว์แค่ 3 หน้า (กลับไปกลับมา ไม่ครบรอบ) */
+      const a=Math.sin(t/DUR*Math.PI*2)*1.7;
+      for(let i=0;i<4;i++){
+        const fa=a+i*Math.PI/2;
+        const dx=Math.sin(fa)*S2, dz=Math.cos(fa);
+        if(dz<0.06)continue;                            // หน้าที่หันหลังไม่วาด
+        const wgt=Math.max(0.15,dz);
+        g.save();g.translate(cx+dx,cy);
+        g.scale(Math.abs(dz),1);
+        g.fillStyle="rgba(58,78,140,"+(0.35+0.55*wgt)+")";
+        g.fillRect(-S2*0.8,-S2*0.8,S2*1.6,S2*1.6);
+        g.strokeStyle="rgba(140,180,255,.7)";g.lineWidth=4;
+        g.strokeRect(-S2*0.8,-S2*0.8,S2*1.6,S2*1.6);
+        g.fillStyle="#ffd23f";g.font="700 "+Math.round(S2*0.9)+"px serif";
+        g.textAlign="center";g.textBaseline="middle";
+        g.globalAlpha=0.35+0.65*wgt;
+        g.fillText(faces[i],0,0);
+        g.restore();
+      }
+      /* ตัวเลือก */
+      for(let i=0;i<4;i++){
+        const x=cw*i+cw/2;
+        const isAns=rev&&i===ansIdx;
+        g.fillStyle=isAns?"rgba(53,224,122,.25)":"rgba(18,28,66,.85)";
+        g.fillRect(x-64,cy2-64,128,128);
+        g.strokeStyle=isAns?"#35e07a":"rgba(140,180,255,.45)";
+        g.lineWidth=isAns?7:3;g.strokeRect(x-64,cy2-64,128,128);
+        g.fillStyle=isAns?"#35e07a":"#ffd23f";g.font="700 70px serif";
+        g.textAlign="center";g.textBaseline="middle";g.fillText(cands[i],x,cy2-4);
+        g.fillStyle="#6f83ac";g.font="600 18px Kanit,sans-serif";
+        g.fillText("ตัวเลือก "+(i+1),x,cy2+82);
+      }
+      g.fillStyle="#9db4dd";g.font="600 22px Kanit,sans-serif";
+      g.textAlign="center";g.textBaseline="middle";
+      g.fillText("กล่องหมุนไปมาแต่มีหน้าหนึ่งที่ไม่เคยหันมาให้เห็น",W/2,52);
+    };
+    return {t:"กล่องหมุนกลับไปกลับมาจนเห็น 3 หน้า แต่มีอีกหน้าที่ไม่เคยโผล่ — หน้าที่ซ่อนอยู่คือตัวเลือกไหน (วงตัวเลือกนั้น)",
+      ans:{x:(cw*ansIdx+cw/2)/W, y:cy2/W, r:0.068},
       draw:build(false), drawReveal:build(true)};
   }}
   ];
@@ -4570,7 +5434,7 @@ const QGA = (()=>{
   }
 
   let BAG=[];
-  const ALLA=()=>MODES.concat(PREDICT,CHAOS);
+  const ALLA=()=>MODES.concat(PREDICT,CHAOS,NEWA);
   function pick(avoid){
     if(!BAG.length){
       BAG=ALLA().slice();
@@ -4600,8 +5464,8 @@ const QGA = (()=>{
     }
     return q;
   }
-  return {make, canRecord, modes:MODES.length+PREDICT.length+CHAOS.length, DUR,
-    _MODES:MODES.concat(PREDICT,CHAOS)};
+  return {make, canRecord, modes:MODES.length+PREDICT.length+CHAOS.length+NEWA.length, DUR,
+    _MODES:MODES.concat(PREDICT,CHAOS,NEWA)};
 })();
 
 function genQuestion(seed){
@@ -4750,7 +5614,12 @@ const Ed={
       counter:"ตัวนับข้ามเลข",pendulum:"ลูกตุ้มคาบผิด",traffic:"ไฟจราจร",spinlag:"เข็มหลุดแนว",
       fillbar:"แถบพลังงาน",seqlight:"ไฟวิ่งผิดคิว",colorcycle:"วงล้อสี",beaker:"บีกเกอร์น้ำ",
       racer:"รถวิ่งทำนายระยะ",ballbox:"ยิงลูกบอลลงกล่อง",shell:"เกมสามถ้วย",crossing:"เส้นทางไขว้",
-      halfbounce:"กระเด้งครึ่งระยะ",spinstop:"เข็มหมุนทำนายช่อง",dominorun:"โดมิโนล้ม",twotank:"สองถังไล่กัน"};
+      halfbounce:"กระเด้งครึ่งระยะ",spinstop:"เข็มหมุนทำนายช่อง",dominorun:"โดมิโนล้ม",twotank:"สองถังไล่กัน",
+      cannon:"ยิงกระสุนวิถีโค้ง",newton:"ลูกตุ้มนิวตัน",marble:"รางลูกแก้วแยกทาง",
+      sundial:"เงาดวงอาทิตย์",snakes:"บันไดงู",modular:"ไฟวิ่งโมดูลาร์",
+      vanish:"ของหายไปจากฉาก",seatmap:"ผังที่นั่ง",route:"เส้นทางที่เดินผ่าน",
+      plates:"ป้ายทะเบียนวิ่งผ่าน",flash:"แฟลชการ์ด",tiltmaze:"เขาวงกตเอียง",
+      rot3d:"หมุนวัตถุ 3 มิติ"};
     const btns=["#edGen","#edGenAnim","#edSave","#edLoad","#edDone"].map(q=>$(q)).filter(Boolean);
     btns.forEach(b=>b.disabled=true);
     const t0=performance.now();
@@ -8747,8 +9616,10 @@ function runClipReveal(rd){
   const pl=(info.steal?rd.stealPlacement:rd.placement)||rd.stealPlacement||rd.placement;
   App.localFlags.camReveal=true;
   G3.scanning=true;
-  const src=(ok&&q.reveal&&q.reveal.dataUrl)?q.reveal.dataUrl:q.media.dataUrl;
-  const isVid=(ok&&q.reveal)?true:(q.media.type==="video");
+  /* ตอบถูก → คลิปที่ "เปิดม่าน" ให้เห็นความจริง · ตอบผิด → คลิปโจทย์ ม่านปิดตามเดิม */
+  const useRev=ok&&q.reveal&&q.reveal.dataUrl;
+  const src=useRev?q.reveal.dataUrl:q.media.dataUrl;
+  const isVid=useRev?true:(q.media.type==="video");
   let img=null,imgReady=false,vid=null;
   if(isVid){
     if(!_screenVideoEl){_screenVideoEl=document.createElement("video");
@@ -8758,15 +9629,23 @@ function runClipReveal(rd){
     vid.src=src;try{vid.currentTime=0;}catch(e){}
     vid.play().catch(()=>{});
   }else{
-    img=new Image();img.onload=()=>imgReady=true;img.src=src;
+    img=new Image();img.onload=()=>{imgReady=true;};img.src=src;
   }
-  try{Sfx.whoosh();Sfx.suspenseStart(4300);}catch(e){}
+  const PRIZE=(function(){try{return prizeOf(rd);}catch(e){return 0;}})();
+  const TEAM=(function(){try{
+    const st=App.room&&App.room.state;
+    const tk=info.steal?(rd.stealTeam||otherTeam(rd.team)):rd.team;
+    return (st&&st.teamNames&&st.teamNames[tk])||("ทีม "+tk);
+  }catch(e){return "";}})();
+  try{Sfx.whoosh();Sfx.suspenseStart(4600);}catch(e){}
   const g=G3.screenCtx,S=1024,C=512;
-  const t0=performance.now(), DUR=4600;
+  const t0=performance.now();
+  const CLIP=4700, TAIL=2600, TOTAL=CLIP+TAIL;   // เล่นคลิปจบก่อน แล้วค่อยเฉลยผล
   let hit=false;
   (function frame(){
     const el=performance.now()-t0;
-    const p=Math.min(1,el/DUR);
+    const p=Math.min(1,el/TOTAL);
+    const after=Math.max(0,el-CLIP)/TAIL;        // 0 ระหว่างคลิป · 0→1 ช่วงเฉลยผล
     const gr=g.createRadialGradient(C,C,60,C,C,520);
     gr.addColorStop(0,"#0c1540");gr.addColorStop(1,"#05081e");
     g.fillStyle=gr;g.fillRect(0,0,S,S);
@@ -8778,37 +9657,59 @@ function runClipReveal(rd){
       const sc=(S*0.98)/Math.hypot(w,h);
       const ox=(S-w*sc)/2, oy=(S-h*sc)/2;
       g.drawImage(src2,ox,oy,w*sc,h*sc);
-      drawMediaFrame(g,ox,oy,w*sc,h*sc,ok?{r:53,g:224,b:122}:{r:255,g:59,b:92});
+      /* กรอบจอ: ยังเป็นทองระหว่างคลิป แล้วค่อยเปลี่ยนสีตามผลตอนจบ */
+      const GOLD={r:255,g:210,b:63}, GRN={r:53,g:224,b:122}, RED={r:255,g:59,b:92};
+      const tgt=ok?GRN:RED, k=Math.min(1,after*2.4);
+      drawMediaFrame(g,ox,oy,w*sc,h*sc,{
+        r:Math.round(GOLD.r+(tgt.r-GOLD.r)*k),
+        g:Math.round(GOLD.g+(tgt.g-GOLD.g)*k),
+        b:Math.round(GOLD.b+(tgt.b-GOLD.b)*k)});
       map={ox,oy,s:sc,w};
     }
-    /* วงของผู้เล่น: เขียวถ้าถูก แดงถ้าผิด */
+    /* วงของผู้เล่น: ขาวระหว่างคลิป → เขียว/แดงหลังคลิปจบ */
     if(pl&&map){
       const x=map.ox+pl.x*map.w*map.s, y=map.oy+pl.y*map.w*map.s, r=pl.r*map.w*map.s;
-      const col=ok?"#35e07a":"#ff3b5c";
-      const pulse=1+0.06*Math.sin(el*0.006);
+      const k=Math.min(1,after*2.4);
+      const col=k<=0.02?"rgba(255,255,255,.85)":(ok?"#35e07a":"#ff3b5c");
+      const pulse=1+(k>0?0.07:0.02)*Math.sin(el*0.006);
       g.save();
-      g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=34;g.lineWidth=11;
+      g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=k>0?36:18;g.lineWidth=k>0?12:8;
       g.beginPath();g.arc(x,y,r*pulse,0,Math.PI*2);g.stroke();
-      g.globalAlpha=.30+.25*Math.sin(el*0.005);
-      g.lineWidth=26;g.beginPath();g.arc(x,y,r*pulse,0,Math.PI*2);g.stroke();
+      if(k>0){
+        g.globalAlpha=.28+.24*Math.sin(el*0.005);
+        g.lineWidth=26;g.beginPath();g.arc(x,y,r*pulse,0,Math.PI*2);g.stroke();
+      }
       g.restore();
-      /* วงคลื่นตอนจบ */
-      if(p>0.72){
-        const q2=(p-0.72)/0.28;
-        g.save();g.globalAlpha=(1-q2)*0.8;
-        g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=30;g.lineWidth=8*(1-q2)+2;
+      if(after>0&&after<0.45){                    // คลื่นตอนเปลี่ยนสี
+        const q2=after/0.45;
+        g.save();g.globalAlpha=(1-q2)*0.85;
+        g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=30;g.lineWidth=9*(1-q2)+2;
         g.beginPath();g.arc(x,y,r+q2*300,0,Math.PI*2);g.stroke();g.restore();
       }
     }
-    /* ป้ายผล */
-    if(p>0.70){
-      const a=Math.min(1,(p-0.70)/0.16);
+    /* ป้ายผล + เงินรางวัล / เปิดสตีล */
+    if(after>0.06){
+      const a=Math.min(1,(after-0.06)/0.18);
+      const head=ok?"ตอบถูก!":"ตอบผิด";
+      const sub=ok?(TEAM+" ได้รับ "+fmt(PRIZE)+" บาท")
+                  :"เปิดโอกาสให้อีกทีม STEAL";
       g.save();g.globalAlpha=a;g.textAlign="center";g.textBaseline="middle";
-      g.font="900 92px PKNB,Kanit,sans-serif";
-      g.fillStyle="rgba(0,0,0,.8)";g.fillText(ok?"ถูกต้อง!":"ยังไม่ใช่",C+4,S-118);
+      const bw=760,bh=170,bx=C-bw/2,by=S-236;
+      g.fillStyle="rgba(4,7,20,.86)";roundRectPath(g,bx,by,bw,bh,26);g.fill();
+      g.strokeStyle=ok?"#35e07a":"#ff3b5c";g.lineWidth=5;
+      g.shadowColor=g.strokeStyle;g.shadowBlur=30;
+      roundRectPath(g,bx,by,bw,bh,26);g.stroke();g.shadowBlur=0;
+      const pop=1+0.10*Math.max(0,1-(after-0.06)/0.22);
+      g.save();g.translate(C,by+62);g.scale(pop,pop);
+      g.font="900 74px PKNB,Kanit,sans-serif";
+      g.fillStyle="rgba(0,0,0,.85)";g.fillText(head,3,4);
       g.fillStyle=ok?"#35e07a":"#ff5c76";
-      g.shadowColor=g.fillStyle;g.shadowBlur=30;
-      g.fillText(ok?"ถูกต้อง!":"ยังไม่ใช่",C,S-122);
+      g.shadowColor=g.fillStyle;g.shadowBlur=26;g.fillText(head,0,0);
+      g.restore();
+      g.font="800 40px PKNB,Kanit,sans-serif";
+      g.fillStyle=ok?"#ffd23f":"#dbe6ff";
+      g.shadowColor="rgba(0,0,0,.9)";g.shadowBlur=10;
+      g.fillText(sub,C,by+128);
       g.restore();
       if(!hit){hit=true;try{Sfx.suspenseHit(ok);}catch(e){}}
     }
